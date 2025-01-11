@@ -1,0 +1,32 @@
+/* 设置默认的根字体大小 */
+html {
+  font-size: 16px;
+}
+
+/* 当视口宽度小于 1200px 时 */
+@media (max-width: 1200px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* 当视口宽度小于 992px 时 */
+@media (max-width: 992px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* 当视口宽度小于 768px 时 */
+@media (max-width: 768px) {
+  html {
+    font-size: 13px;
+  }
+}
+
+/* 当视口宽度小于 576px 时 */
+@media (max-width: 576px) {
+  html {
+    font-size: 12px;
+  }
+}
