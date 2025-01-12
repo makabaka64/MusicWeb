@@ -51,9 +51,9 @@ const next = () => {
 }
 
 // 音量变化
-const changeVolume = (newVolume) => {
-  volume.value = newVolume
-}
+// const changeVolume = (newVolume) => {
+//   volume.value = newVolume
+// }
 
 // 进度条变化
 const changeTime = (newTime) => {
