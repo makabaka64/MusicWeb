@@ -16,8 +16,15 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()]
     }),
     Components({
-      resolvers: [ElementPlusResolver()]
+      resolvers: [
+        ElementPlusResolver({
+          importStyle: false // 禁用自动导入组件样式
+        })
+      ]
     })
+    // Components({
+    //   resolvers: [ElementPlusResolver()]
+    // })
   ],
   resolve: {
     alias: {

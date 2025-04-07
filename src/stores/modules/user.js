@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-// import { userGetInfoService } from '@/api/user'
+import { userGetInfoService } from '@/api/user'
 import { ref } from 'vue'
 
-// 用户模块  big-user 唯一标识，用来作区分
+// 用户模块  music-user 唯一标识，用来作区分
 export const useUserStore = defineStore(
   'music-user',
   () => {
@@ -13,14 +13,14 @@ export const useUserStore = defineStore(
     }
 
     const user = ref({})
-    // const getUser = async () => {
-    //   const res = await userGetInfoService() // 请求获取数据
-    //   user.value = res.data.data
-    // }
+    const getUser = async () => {
+      const res = await userGetInfoService() // 请求获取数据
+      user.value = res.data.data
+    }
 
-    // const setUser = (obj) => (user.value = obj)
+    const setUser = (obj) => (user.value = obj)
 
-    return { token, setToken, removeToken, user }
+    return { token, setToken, removeToken, user, getUser, setUser }
   },
   {
     persist: true // 持久化

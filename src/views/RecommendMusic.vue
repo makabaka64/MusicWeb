@@ -1,53 +1,46 @@
 <script setup>
-// 使用 Composition API 中的 `ref` 和 `reactive` 来声明响应式数据
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import PlayList from '@/components/PlayList.vue'
-// 歌单列表
-const songList = ref([
-  {
-    name: '轻音乐精选',
-    src: '../src/assets/例.jpg',
-    id: 1
-  },
-  {
-    name: '流行金曲',
-    src: '../src/assets/例.jpg',
-    id: 2
-  },
-  {
-    name: '经典老歌',
-    src: '../src/assets/例.jpg',
-    id: 3
-  },
-  {
-    name: '电子音乐',
-    src: '../src/assets/例.jpg',
-    id: 4
+import { usePlaylistStore, useArtistStore } from '@/stores'
+const artistStore = useArtistStore()
+const playlistStore = usePlaylistStore()
+const loading = ref({
+  artists: true,
+  playlists: true
+})
+// 请求并获取数据
+onMounted(async () => {
+  try {
+    await Promise.all([
+      artistStore.fetchTopArtists(),
+      playlistStore.fetchAllPlaylists()
+    ])
+  } catch (error) {
+    console.error('数据加载失败:', error)
+  } finally {
+    loading.value.artists = false
+    loading.value.playlists = false
   }
-])
-// 歌手列表
-const singerList = ref([
-  {
-    name: '周杰伦',
-    src: '../src/assets/例.jpg',
-    id: 1
-  },
-  {
-    name: 'Taylor Swift',
-    src: '../src/assets/例.jpg',
-    id: 2
-  },
-  {
-    name: '陈奕迅',
-    src: '../src/assets/例.jpg',
-    id: 3
-  },
-  {
-    name: 'Adele',
-    src: '../src/assets/例.jpg',
-    id: 4
-  }
-])
+})
+// onMounted(async () => {
+//   await artistStore.fetchTopArtists()
+//   await playlistStore.fetchAllPlaylists()
+// })
+
+// 只获取前五个歌手
+const top5Artists = computed(() => {
+  return (artistStore.allPlayList || []).slice(0, 5)
+})
+
+const top5Playlists = computed(() => {
+  return (playlistStore.allPlayList || []).slice(0, 5)
+})
+// const top5Artists = computed(() => artistStore.allPlayList.slice(0, 5))
+console.log('top5Artists:', top5Artists.value)
+console.log('歌手图片', top5Artists.value[0].images[0].url)
+
+// 只获取前五个专辑
+// const top5Playlists = computed(() => playlistStore.allPlayList.slice(0, 5))
 
 // 轮播图数据
 const images = ref([
@@ -69,25 +62,25 @@ const images = ref([
       <img :src="item.src" :alt="item.alt" class="carousel-img" />
     </el-carousel-item>
   </el-carousel>
-  <!--热门歌单-->
   <play-list
     class="play-list-container"
     title="歌单"
     path="song-detail"
-    :playList="songList"
+    :playList="top5Playlists"
   ></play-list>
-  <!--热门歌手-->
+
   <play-list
+    v-if="!loading.artists && top5Artists.length"
     class="play-list-container"
     title="歌手"
     path="singer-detail"
-    :playList="singerList"
+    :playList="top5Artists"
   ></play-list>
 </template>
 <style lang="scss" scoped>
 .swiper-container {
   width: 80%;
-  height: 23rem; /* 设置轮播图的高度 */
+  height: 23rem;
   margin: auto;
   padding-top: 3rem;
   border-bottom: 1px solid #e4e7ed;

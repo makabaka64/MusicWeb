@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const props = defineProps({
   title: String,
-  playList: Array,
+  playList: { type: Array, default: () => [] },
   path: String
 })
 const { path } = toRefs(props)
@@ -18,10 +18,38 @@ const goAblum = (item) => {
     <ul class="play-body">
       <li class="card-frame" v-for="(item, index) in playList" :key="index">
         <div class="card" @click="goAblum(item)">
-          <el-image class="card-img" fit="contain" :src="item.src" />
+          <!-- 修改重点：绑定 images[0].url -->
+          <el-image
+            class="card-img"
+            fit="cover"
+            :src="item.images?.[0]?.url || require('@/assets/例.jpg')"
+            :alt="item.name"
+            :preview-src-list="[item.images?.[0]?.url]"
+            loading="eager"
+          >
+            <template #error>
+              <div class="image-error">
+                <img :src="require('@/assets/例.jpg')" />
+              </div>
+            </template>
+          </el-image>
+          <!-- <el-image
+            lazy
+            :scroll-container="'.play-body'"
+            class="card-img"
+            fit="contain"
+            :src="item.images?.[0]?.url || './assets/例.jpg'"
+            :alt="item.name"
+          >
+            < 图片加载失败时的占位内容  -->
+          <!-- <template #error>
+              <div class="image-error"></div>
+            </template> -->
+          <!-- </el-image>  -->
           <div class="mask" @click="goAblum(item)"></div>
         </div>
-        <p class="card-name">{{ item.name || item.title }}</p>
+        <!-- 显示艺术家名称 -->
+        <p class="card-name">{{ item.name }}</p>
       </li>
     </ul>
   </div>
@@ -47,6 +75,9 @@ const goAblum = (item) => {
     flex-wrap: wrap;
     justify-content: space-between;
     padding: 0px 1rem;
+    li {
+      list-style: none;
+    }
     .card-frame {
       width: 20%;
       margin-bottom: 1rem;
@@ -57,14 +88,6 @@ const goAblum = (item) => {
         border-radius: 5px;
         overflow: hidden;
         margin-right: 2rem;
-      }
-
-      .card-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        margin: 0.5rem 0;
       }
 
       &:hover .card-img {
@@ -90,5 +113,26 @@ const goAblum = (item) => {
     opacity: 1;
     cursor: pointer;
   }
+}
+/* 新增错误状态样式 */
+.image-error {
+  width: 100%;
+  height: 100%;
+  background-image: url(../assets/例.jpg);
+  background-size: contain;
+}
+
+.card-img {
+  /* 确保图片容器有固定宽高比 */
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  object-fit: cover; /* 保持图片比例 */
+}
+
+.card-name {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #333;
 }
 </style>

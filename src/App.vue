@@ -1,6 +1,4 @@
-<script setup>
-// import { mixins } from './mixin/index'
-</script>
+<script setup></script>
 
 <template>
   <router-view></router-view>

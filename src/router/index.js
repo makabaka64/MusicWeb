@@ -33,16 +33,21 @@ const router = createRouter({
           component: () => import('@/views/MyMusic.vue')
         },
         {
-          path: '/toplist',
-          component: () => import('@/views/TopList.vue')
-        },
-        {
           path: '/login',
           component: () => import('@/views/LoginPage.vue')
         },
+
         {
           path: '/setting',
           component: () => import('@/views/SettingPage.vue')
+        },
+        {
+          path: '/lyric/:id',
+          component: () => import('@/views/LyricPage.vue')
+        },
+        {
+          path: '/search',
+          component: () => import('@/views/SearchPage.vue')
         }
       ]
     }

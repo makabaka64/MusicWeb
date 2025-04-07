@@ -1,18 +1,41 @@
 <script setup>
-import { ref } from 'vue'
-import Comment from '@/components/Comment.vue'
-const songPic = ref(
-  'https://p1.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg'
-)
-const singerName = ref('周杰伦')
-const songTitle = ref('稻香')
-const lyricArr = ref([])
-const lrcTop = ref(0)
-const songId = ref(0)
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+// 获取歌曲ID并加载数据
+const songId = ref(route.params.id)
+const songPic = ref('')
+const songTitle = ref('')
+const singerName = ref('')
+const lyricArr = ref([]) // 歌词数组
+const lrcTop = ref('0px') // 歌词位置
+
+onMounted(() => {
+  // 假设你有获取歌曲信息和歌词的 API
+  // 这里可以通过 songId 请求数据
+  fetchSongData(songId.value)
+})
+
+const fetchSongData = () => {
+  // 你可以根据 `id` 获取歌曲的图片、标题、歌手信息等
+  // 这里是示例代码
+  songPic.value = 'path-to-song-image.jpg'
+  songTitle.value = '歌曲名称'
+  singerName.value = '歌手名'
+  lyricArr.value = [
+    [0, '第一句歌词'],
+    [15, '第二句歌词'],
+    [30, '第三句歌词']
+    // ...
+  ]
+}
 </script>
 <template>
   <div class="song-container">
-    <el-image class="song-pic" fit="contain" :src="songPic" />
+    <!-- :src="attachImageUrl(songPic) -->
+    <el-image class="song-pic" fit="contain" />
     <ul class="song-info">
       <li>歌手：{{ singerName }}</li>
       <li>歌曲：{{ songTitle }}</li>
@@ -113,7 +136,7 @@ const songId = ref(0)
   transition: all 0.3s ease;
 }
 
-@media screen and (min-width: 768px) {
+@media screen and (min-width: 640px) {
   .container {
     padding-top: 30px;
   }
@@ -122,7 +145,7 @@ const songId = ref(0)
   }
 }
 
-@media screen and (max-width: 1024px) {
+@media screen and (min-width: 1024px) {
   .container {
     padding: 20px;
   }

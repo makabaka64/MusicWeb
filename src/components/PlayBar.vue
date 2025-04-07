@@ -1,90 +1,225 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, watch, ref, onMounted, onBeforeUnmount } from 'vue'
+import { usePlayerStore } from '@/stores'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import {
+  userAddFavoriteService,
+  userDeleteFavoriteService,
+  userGetInfoService,
+  userGetFavoriteListService
+} from '@/api/user'
+const playerStore = usePlayerStore()
+const router = useRouter()
 
-// 控制组件的显示和隐藏
-const toggle = ref(false)
+// 计算属性直接绑定 store 中的状态
+const introduction = computed(() => playerStore.introduction)
+const songTitle = computed(() => playerStore.songTitle)
+const singerName = computed(() => playerStore.singerName)
+const startTime = computed(() => playerStore.startTime)
+const endTime = computed(() => playerStore.endTime)
+const songId = computed(() => playerStore.songId)
+const songImages = computed(() => playerStore.songImages)
+// const nowTime = computed(() => playerStore.nowTime)
+const nowTime = computed({
+  get: () => playerStore.nowTime,
+  set: (val) => playerStore.updateNowTime(val)
+})
+const playState = computed(() => playerStore.playState)
+// const volume = computed(() => playerStore.volume)
+const isCollection = computed(() => playerStore.isCollection)
+const previewUrl = computed(() => playerStore.previewUrl)
+// 内部 audio 播放器，用于播放预览音频
+const audioPlayer = ref(new Audio())
 
-// 当前播放时间
-const nowTime = ref(0)
-const songTitle = ref('歌曲名称')
-const singerName = ref('歌手名')
-const songId = ref(1)
-const startTime = ref('00:00')
-const endTime = ref('03:30')
-
-// 播放状态
-const playStateList = ['mdi:play', 'mdi:pause'] // 替换成实际图标
-const playStateIndex = ref(0) // 0 为播放状态，1 为暂停状态
-// 音量控制
-const volume = ref(50)
-
-// 收藏状态
-const isCollection = ref(false)
-
-// 图标列表
-
+// 本地用户信息及收藏列表
+const user_id = ref(null)
+const favoriteList = ref([])
+// 图标列表，根据实际需求设置
 const iconList = {
-  // ZHEDIE: 'material-symbols:menu', // 折叠图标
-  SHANGYISHOU: 'mdi:skip-previous', // 上一首
-  XIAYISHOU: 'mdi:skip-next', // 下一首
-  YINLIANG: 'mdi:volume-high', // 音量
-  JINGYIN: 'mdi:volume-mute', // 静音
-  like: 'mdi:heart', // 喜欢
-  dislike: 'mdi:heart-outline', // 不喜欢
-  download: 'mdi:download', // 下载
-  LIEBIAO: 'mdi:playlist-music' // 列表
+  SHANGYISHOU: 'mdi:skip-previous',
+  XIAYISHOU: 'mdi:skip-next',
+  YINLIANG: 'mdi:volume-high',
+  JINGYIN: 'mdi:volume-mute',
+  like: 'mdi:heart',
+  dislike: 'mdi:heart-outline',
+  LIEBIAO: 'mdi:playlist-music'
+}
+// 侧边栏显示控制
+const showSidebar = ref(false)
+const toggleIcon = ref(null) // 触发按钮的引用
+const sidebar = ref(null) // 侧边栏的引用
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value
+}
+// 处理全局点击事件
+const handleDocumentClick = (event) => {
+  // 获取DOM元素引用
+  const iconEl = toggleIcon.value?.$el // 获取组件根元素
+  const sidebarEl = sidebar.value
+
+  // 判断点击位置
+  const isClickInside = sidebarEl?.contains(event.target)
+  const isClickOnIcon = iconEl?.contains(event.target)
+
+  // 如果点击外部区域则关闭侧边栏
+  if (!isClickInside && !isClickOnIcon) {
+    showSidebar.value = false
+  }
+}
+// 监听侧边栏状态变化
+watch(showSidebar, (newVal) => {
+  if (newVal) {
+    document.addEventListener('click', handleDocumentClick)
+  } else {
+    document.removeEventListener('click', handleDocumentClick)
+  }
+})
+const playStateList = ['mdi:play', 'mdi:pause']
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const res = await userGetInfoService()
+    user_id.value = res.data.data.id
+  } catch (error) {
+    ElMessage.error(error.message || '获取用户信息失败')
+  }
 }
 
-// 播放状态切换
-const changePlayState = () => {
-  playStateIndex.value = playStateIndex.value === 0 ? 1 : 0
+// 获取用户收藏列表
+const fetchUserFavorites = async () => {
+  try {
+    const res = await userGetFavoriteListService(user_id.value)
+    if (res.data.status === 0) {
+      favoriteList.value = res.data.data.map((item) => item.song_id)
+      // 根据当前歌曲是否在收藏列表中，同步 store 中 isCollection 状态
+      if (songId.value && favoriteList.value.includes(songId.value)) {
+        playerStore.$patch({ isCollection: true })
+      } else {
+        playerStore.$patch({ isCollection: false })
+      }
+    }
+  } catch (error) {
+    ElMessage.error('获取收藏列表失败：' + error.message)
+  }
 }
 
-// 上一首
-const prev = () => {
-  // 下一首的逻辑
+// 监听 songId 变化，当切换歌曲时重新获取收藏状态
+watch(songId, async (newVal) => {
+  if (newVal && user_id.value) {
+    await fetchUserFavorites()
+  }
+})
+// 播放器交互方法，调用 store 的 action
+// 播放/暂停音频
+const changePlayState = async () => {
+  try {
+    // 当处于暂停状态时播放预览音频
+    if (playState.value === 0) {
+      if (!previewUrl.value) {
+        ElMessage.warning('当前歌曲没有预览地址')
+        return
+      }
+
+      audioPlayer.value.src = previewUrl.value
+      await audioPlayer.value.play()
+    } else {
+      // 播放时则暂停
+      audioPlayer.value.pause()
+    }
+    // 切换全局播放状态
+    playerStore.togglePlayState()
+  } catch (error) {
+    ElMessage.error(error.message || '播放失败')
+  }
 }
-
-// 下一首
-const next = () => {
-  // 下一首的逻辑
-}
-
-// 音量变化
-// const changeVolume = (newVolume) => {
-//   volume.value = newVolume
-// }
-
-// 进度条变化
+// 更新播放进度（滑块拖动时触发）
 const changeTime = (newTime) => {
-  nowTime.value = newTime
+  playerStore.updateNowTime(newTime)
+  if (audioPlayer.value) {
+    audioPlayer.value.currentTime = newTime
+  }
 }
 
-// 收藏状态切换
-const changeCollection = () => {
-  isCollection.value = !isCollection.value
+// 收藏操作：点击收藏图标时触发
+const changeCollection = async () => {
+  try {
+    if (!user_id.value) {
+      ElMessage.warning('请先登录')
+      return
+    }
+    const currentSongId = songId.value
+    if (!currentSongId) {
+      ElMessage.warning('没有选中的歌曲')
+      return
+    }
+    // 如果当前歌曲未收藏则添加收藏，否则取消收藏
+    if (!favoriteList.value.includes(currentSongId)) {
+      console.log('收藏歌曲:', currentSongId)
+
+      const params = {
+        user_id: user_id.value,
+        song_id: currentSongId,
+        songName: songTitle.value,
+        singerName: singerName.value,
+        introduction: introduction.value
+      }
+      const res = await userAddFavoriteService(params)
+      if (res.data.status === 0) {
+        favoriteList.value.push(currentSongId)
+        playerStore.$patch({ isCollection: true })
+        ElMessage.success('收藏成功')
+      }
+    } else {
+      const res = await userDeleteFavoriteService({
+        user_id: user_id.value,
+        song_id: currentSongId
+      })
+      if (res.data.status === 0) {
+        favoriteList.value = favoriteList.value.filter(
+          (id) => id !== currentSongId
+        )
+        playerStore.$patch({ isCollection: false })
+        ElMessage.success('取消收藏成功')
+      }
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '操作失败')
+  }
 }
 
-// 下载音乐
-const downloadMusic = () => {
-  // 处理下载逻辑
+const prev = () => {
+  console.log(playerStore.currentIndex)
+
+  playerStore.previousTrack()
 }
 
-// 跳转到播放器页面
+const next = () => {
+  console.log(playerStore.currentIndex)
+  playerStore.nextTrack()
+}
+
 const goPlayerPage = () => {
-  // 跳转到播放器页面的逻辑
+  router.push({ path: `/lyric/${songId.value}` })
 }
 
-// 切换侧边栏
-const changeAside = () => {
-  // 切换侧边栏的逻辑
-}
+// 组件挂载时，先获取用户信息，再获取收藏列表
+onMounted(async () => {
+  await fetchUserInfo()
+  if (user_id.value) {
+    await fetchUserFavorites()
+  }
+})
+// 组件卸载时清理事件监听
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+})
 </script>
+
 <template>
-  <div class="play-bar" :class="{ show: !toggle }">
-    <div class="fold" :class="{ turn: toggle }"></div>
-    <yin-icon :icon="iconList.ZHEDIE" @click="toggle = !toggle"></yin-icon>
-    <!--播放进度-->
+  <div class="play-bar">
+    <div class="fold" @click="changeAside"></div>
+    <!-- 播放进度 -->
     <el-slider
       class="progress"
       v-model="nowTime"
@@ -93,74 +228,71 @@ const changeAside = () => {
     ></el-slider>
     <div class="control-box">
       <div class="info-box">
-        <!--歌曲图片-->
+        <!-- 歌曲图片 -->
         <div @click="goPlayerPage">
-          <el-image class="song-bar-img" fit="contain" />
+          <el-image class="song-bar-img" fit="contain" :src="songImages" />
         </div>
-        <!--播放开始结束时间-->
+        <!-- 歌曲信息 -->
         <div v-if="songId">
           <div class="song-info">{{ songTitle }} - {{ singerName }}</div>
           <div class="time-info">{{ startTime }} / {{ endTime }}</div>
         </div>
       </div>
       <div class="song-ctr">
-        <!--上一首-->
+        <!-- 上一首 -->
         <yin-icon
           class="yin-play-show"
           :icon="iconList.SHANGYISHOU"
           @click="prev"
         ></yin-icon>
-        <!--播放-->
+        <!-- 播放/暂停 -->
         <yin-icon
           class="yin-play-show"
-          :icon="playStateList[playStateIndex]"
+          :icon="playStateList[playState]"
           @click="changePlayState"
         ></yin-icon>
-        <!-- <yin-icon :icon="playBtnIcon" @click="togglePlay"></yin-icon> -->
-        <!--下一首-->
+        <!-- 下一首 -->
         <yin-icon
           class="yin-play-show"
           :icon="iconList.XIAYISHOU"
           @click="next"
         ></yin-icon>
-        <!--音量-->
-        <el-dropdown class="yin-play-show" trigger="click">
-          <yin-icon v-if="volume !== 0" :icon="iconList.YINLIANG"></yin-icon>
-          <yin-icon v-else :icon="iconList.JINGYIN"></yin-icon>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-slider
-                class="yin-slider"
-                style="height: 150px; margin: 10px 0"
-                v-model="volume"
-                :vertical="true"
-              ></el-slider>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
       </div>
       <div class="song-ctr song-edit">
-        <!--收藏-->
+        <!-- 收藏 -->
         <yin-icon
           class="yin-play-show"
           :class="{ active: isCollection }"
           :icon="isCollection ? iconList.like : iconList.dislike"
           @click="changeCollection"
         ></yin-icon>
-        <!--下载-->
+        <!-- 歌单列表/侧边栏 -->
         <yin-icon
-          class="yin-play-show"
-          :icon="iconList.download"
-          @click="downloadMusic"
+          ref="toggleIcon"
+          :icon="iconList.LIEBIAO"
+          @click="toggleSidebar"
         ></yin-icon>
-        <!--歌曲列表-->
-        <yin-icon :icon="iconList.LIEBIAO" @click="changeAside"></yin-icon>
+        <!-- 侧边栏，v-if 控制显示  -->
+        <div v-if="showSidebar" class="sidebar" ref="sidebar">
+          <div class="play-title">播放列表</div>
+          <ul>
+            <li
+              v-for="(track, index) in playerStore.playlist"
+              :key="track.id"
+              :class="{ active: index === playerStore.currentIndex }"
+              @click="playerStore.playTrackAtIndex(index)"
+            >
+              {{ track.name }} ---
+              {{ track.artists.map((a) => a.name).join(', ') }}
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .play-bar {
   background-color: #fff;
   position: fixed;
@@ -237,6 +369,37 @@ const changeAside = () => {
 
 .active.icon {
   color: red;
+}
+.sidebar {
+  position: absolute;
+  top: -120px;
+  right: -20px;
+  width: 370px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  height: 70px;
+  /* max-height: 100%; */
+  overflow-y: auto;
+  .play-title {
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  li {
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+    cursor: pointer;
+  }
+  li.active {
+    background: #f0f0f0;
+  }
 }
 
 @media screen and (min-width: 576px) {

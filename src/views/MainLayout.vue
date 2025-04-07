@@ -1,19 +1,23 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Search } from '@element-plus/icons-vue'
-// import { useRouter, useRoute } from 'vue-router'
-// const router = useRouter()
-// const route = useRoute()
-
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores'
+const userStore = useUserStore()
+const router = useRouter()
 const keywords = ref('')
+onMounted(() => {
+  userStore.getUser()
+})
 const goSearch = () => {
-  console.log(keywords.value)
+  if (!keywords.value.trim()) return
+  router.push({ path: 'search', query: { q: keywords.value } })
+  keywords.value = ''
 }
 const menuList = [
   { name: '首页', path: '/recommend' },
   { name: '歌手', path: '/artist' },
   { name: '歌单', path: '/album' },
-  { name: '排行榜', path: '/toplist' },
   { name: '我的音乐', path: '/mymusic' }
 ]
 </script>
@@ -46,20 +50,29 @@ const menuList = [
               @keyup.enter="goSearch()"
             />
           </div>
-          <el-button
-            class="login-btn"
-            type="primary"
-            @click="$router.push('/login')"
-            >登录</el-button
-          >
+
+          <div v-if="!userStore.token" class="not-logged-in">
+            <!-- <el-avatar :src="userStore.user.user_pic || avatar" /> -->
+            <el-button
+              class="login-btn"
+              type="primary"
+              @click="$router.push('/login')"
+              >登录</el-button
+            >
+          </div>
+          <div v-else class="personal-content">
+            <el-avatar
+              :src="userStore.user.user_pic || '@/assets/avatar.png'"
+            />
+          </div>
         </div>
       </el-header>
     </el-container>
     <div class="main">
       <router-view></router-view>
       <current-play></current-play>
-      <play-bar></play-bar>
     </div>
+    <el-footer><play-bar></play-bar></el-footer>
   </div>
 </template>
 

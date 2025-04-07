@@ -1,70 +1,61 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { usePlaylistStore } from '@/stores'
+// import { getPlaylistCommentsService } from '@/api/user'
 import SongList from '@/components/SongList.vue'
 import Comment from '@/components/CommentList.vue'
+// import { Loading } from '@element-plus/icons-vue/dist/types'
 
-// 歌单信息
-const songDetails = ref({
-  title: '周杰伦精选',
-  pic: 'https://example.com/album.jpg',
-  introduction: '精选集，收录了周杰伦的经典作品。'
+const route = useRoute()
+const playlistStore = usePlaylistStore()
+const Loading = ref(true)
+
+onMounted(async () => {
+  try {
+    const albumId = route.params.id
+    await Promise.all([
+      playlistStore.fetchPlaylistDetail(albumId),
+      playlistStore.fetchPlaylistTracks(albumId)
+    ])
+  } finally {
+    Loading.value = false
+  }
+
+  // await getPlaylistCommentsService(albumId)
 })
-
-// 歌曲列表
-const currentSongList = ref([
-  { id: 1, songName: '青花瓷', singerName: '周杰伦', duration: '04:40' },
-  { id: 2, songName: '稻香', singerName: '周杰伦', duration: '03:40' },
-  { id: 3, songName: '晴天', singerName: '周杰伦', duration: '03:50' }
-])
-
-// 评论组件需要的 ID
-const songListId = ref(123)
-
-// 评分变量
-const rank = ref(4) // 歌单评分
-const score = ref(3) // 用户评分
-
-// 辅助文本
-const assistText = computed(() => (score.value >= 4 ? '优秀' : '一般'))
-
-// 是否禁用评分
-const disabledRank = ref(false)
-
-// 更新评分值
-const pushValue = () => {
-  console.log('用户评分:', score.value)
-  // 在这里可以执行一些评分提交的操作，比如向后端提交评分等
-}
 </script>
 <template>
   <el-container>
     <el-aside class="album-slide">
-      <el-image class="album-img" fit="contain" :src="songDetails.pic" />
-      <h3 class="album-info">{{ songDetails.title }}</h3>
+      <el-image
+        class="album-img"
+        fit="contain"
+        :src="playlistStore.currentPlaylist?.pic"
+      />
+      <div class="album-info">
+        <ul>
+          <li v-if="playlistStore.currentPlaylist">
+            发布日期：{{ playlistStore.currentPlaylist.release_date }}
+          </li>
+          <li v-if="playlistStore.currentPlaylist">
+            总曲目数：{{ playlistStore.currentPlaylist.total_tracks }}
+          </li>
+        </ul>
+      </div>
     </el-aside>
     <el-main class="album-main">
-      <h1>简介</h1>
-      <p>{{ songDetails.introduction }}</p>
-      <!--评分-->
-      <div class="album-score">
-        <div>
-          <h3>歌单评分</h3>
-          <el-rate v-model="rank" allow-half disabled></el-rate>
-        </div>
-        <span>{{ rank * 2 }}</span>
-        <div>
-          <h3>{{ assistText }} {{ score * 2 }}</h3>
-          <el-rate
-            allow-half
-            v-model="score"
-            :disabled="disabledRank"
-            @click="pushValue()"
-          ></el-rate>
-        </div>
-      </div>
-      <!--歌曲-->
-      <song-list class="album-body" :songList="currentSongList"></song-list>
-      <comment :playId="songListId" :type="1"></comment>
+      <h1>{{ playlistStore.currentPlaylist?.introduction }}</h1>
+      <song-list
+        class="album-body"
+        :songList="playlistStore.currentSongList"
+      ></song-list>
+      <comment
+        :playId="playlistStore.currentPlaylist?.id"
+        :type="1"
+        v-if="playlistStore.currentPlaylist?.id"
+        :key="playlistStore.currentPlaylist?.id"
+      ></comment>
     </el-main>
   </el-container>
 </template>

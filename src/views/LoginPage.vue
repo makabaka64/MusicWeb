@@ -1,17 +1,12 @@
 <script setup>
+import { userRegisterService, userLoginService } from '@/api/user'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ref, watch } from 'vue'
+import { useUserStore } from '@/stores/index'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 const form = ref()
 const isRegister = ref(true)
-//注册前进行校验
-const register = async () => {
-  await form.value.validate()
-  console.log('开始注册请求')
-}
-// const login = async () => {
-//   await form.value.validate()
-//   console.log('开始登录')
-// }
 const rules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -50,6 +45,34 @@ const formModel = ref({
   password: '',
   repassword: ''
 })
+const userStore = useUserStore()
+const router = useRouter()
+const register = async () => {
+  await form.value.validate()
+  await userRegisterService(formModel.value)
+  ElMessage.success('注册成功')
+  // 切换到登录
+  isRegister.value = false
+}
+const login = async () => {
+  try {
+    await form.value.validate()
+    const res = await userLoginService(formModel.value)
+    console.log('登录返回数据：', res)
+
+    if (res.data.token) {
+      userStore.setToken(res.data.token)
+      console.log('存储的 token:', userStore.token)
+      ElMessage.success('登录成功')
+      router.push('/mymusic')
+    } else {
+      ElMessage.error('登录失败，请检查账号密码')
+    }
+  } catch (error) {
+    console.error('登录错误:', error)
+    ElMessage.error('登录失败')
+  }
+}
 watch(isRegister, () => {
   formModel.value = {
     username: '',
@@ -60,7 +83,7 @@ watch(isRegister, () => {
 </script>
 <template>
   <el-row class="login-page">
-    <el-col :span="10" class="bg">
+    <el-col :span="12" class="bg">
       <div class="title"><h1>Welcome!</h1></div>
       <div class="page">
         <h3>🎵 加入我们，开启您的音乐之旅 🎵</h3>
@@ -71,7 +94,7 @@ watch(isRegister, () => {
         </ul>
       </div>
     </el-col>
-    <el-col :span="8" :offset="3" class="form">
+    <el-col :span="6" :offset="3" class="form">
       <el-form
         :rules="rules"
         ref="form"
@@ -118,7 +141,7 @@ watch(isRegister, () => {
         </el-form-item>
         <el-form-item class="flex">
           <el-link type="info" :underline="false" @click="isRegister = false">
-            ← 返回
+            ← 登录
           </el-link>
         </el-form-item>
       </el-form>
@@ -149,14 +172,12 @@ watch(isRegister, () => {
             placeholder="请输入密码"
           ></el-input>
         </el-form-item>
-        <!-- <el-form-item class="flex">
-          <div class="flex">
-            <el-checkbox>记住我</el-checkbox>
-            <el-link type="primary" :underline="false">忘记密码？</el-link>
-          </div>
-        </el-form-item> -->
         <el-form-item>
-          <el-button class="button" type="primary" auto-insert-space
+          <el-button
+            @click="login"
+            class="button"
+            type="primary"
+            auto-insert-space
             >登录</el-button
           >
         </el-form-item>
@@ -177,15 +198,19 @@ watch(isRegister, () => {
   // background-image: url('../assets/login.jpg');
   .bg {
     color: #0f0e0e;
+    margin: auto;
+    padding: 0px 0px 0px 180px;
     .title {
-      padding: 150px 0px 0px 280px;
+      // padding: 0px 0px 0px 80px;
+      white-space: nowrap;
     }
     .page {
-      padding: 3px 0px 0px 270px;
+      // padding: 3px 0px 0px 170px;
+      white-space: nowrap;
     }
-    .page2 {
-      padding: 0px 0px 0px 270px;
-    }
+    // .page2 {
+    //   // padding: 0px 0px 0px 170px;
+    // }
   }
 }
 
@@ -195,7 +220,8 @@ watch(isRegister, () => {
   flex-direction: column;
   justify-content: center;
   user-select: none;
-  padding: 90px 60px;
+  // padding: 90px 60px;
+  margin: auto;
   .title {
     margin: 0 auto;
   }

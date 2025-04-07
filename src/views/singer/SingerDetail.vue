@@ -1,42 +1,43 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import SongList from '@/components/SongList.vue'
-// 模拟的歌手信息
-const songDetails = ref({
-  name: '周杰伦',
-  pic: 'https://example.com/jaychou.jpg',
-  sex: 1, // 1: 男, 2: 女
-  birth: '1978-01-18',
-  location: '台湾',
-  introduction:
-    '周杰伦，华语流行歌手、音乐制作人，凭借个人音乐作品的独特风格...'
-})
+import { useArtistStore } from '@/stores'
 
-// 模拟的歌曲列表
-const currentSongList = ref([
-  { id: 1, name: '青花瓷', duration: '04:40' },
-  { id: 2, name: '稻香', duration: '03:40' },
-  { id: 3, name: '晴天', duration: '03:50' },
-  { id: 4, name: '不能说的秘密', duration: '04:30' }
-])
+const route = useRoute()
+const playlistStore = useArtistStore()
+
+onMounted(async () => {
+  const artistId = route.params.id
+  await playlistStore.fetchArtistData(artistId)
+  await playlistStore.fetchTopTracks(artistId)
+})
 </script>
+
 <template>
   <el-container>
     <el-aside class="album-slide">
-      <el-image class="singer-img" fit="contain" :src="songDetails.pic" />
+      <el-image
+        class="singer-img"
+        fit="contain"
+        :src="playlistStore.songDetails?.pic"
+      />
       <div class="album-info">
-        <h2>基本资料</h2>
         <ul>
-          <li v-if="songDetails.sex !== 2">性别：{{ songDetails.sex }}</li>
-          <li>生日：{{ songDetails.birth }}</li>
-          <li>故乡：{{ songDetails.location }}</li>
+          <li v-if="playlistStore.songDetails">
+            粉丝：{{ playlistStore.songDetails.followers }}
+          </li>
+          <li v-if="playlistStore.songDetails">
+            人气：{{ playlistStore.songDetails.popularity }}
+          </li>
         </ul>
       </div>
     </el-aside>
     <el-main class="album-main">
-      <h1>{{ songDetails.name }}</h1>
-      <p>{{ songDetails.introduction }}</p>
-      <song-list :songList="currentSongList"></song-list>
+      <h1>{{ playlistStore.songDetails?.name }}</h1>
+      <p>{{ playlistStore.songDetails?.introduction }}</p>
+
+      <song-list :songList="playlistStore.currentSongList" />
     </el-main>
   </el-container>
 </template>

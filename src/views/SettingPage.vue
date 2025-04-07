@@ -3,59 +3,63 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Upload } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores'
-// import { userUploadAvatarService } from '@/api/user'
+import { useRouter } from 'vue-router'
+import {
+  userUpdateInfoService,
+  userUploadAvatarService,
+  userUpdatePassService
+} from '@/api/user'
 const userStore = useUserStore()
 
-const uploadRef = ref()
-const imgUrl = ref(userStore.user.user_pic)
-// 头像base64字符串
-const onUploadFile = (file) => {
-  // 基于 FileReader 实现图片预览
-  const reader = new FileReader()
-  reader.readAsDataURL(file.raw)
-  reader.onload = () => {
-    imgUrl.value = reader.result
+const {
+  user: { username, nickname, email, id },
+  getUser
+} = useUserStore()
+const userInfo = ref({ username, nickname, email, id })
+const formRef = ref()
+
+const SignUpRules = {
+  // username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ]
+}
+const goBack = (step) => {
+  window.history.go(step)
+}
+const submitForm = async () => {
+  try {
+    await formRef.value.validate()
+    const response = await userUpdateInfoService(userInfo.value)
+    getUser()
+    if (response.data.status !== 0) {
+      throw new Error(response.data.message)
+    }
+    ElMessage.success('修改成功')
+  } catch (error) {
+    console.error('Update failed:', error)
+    ElMessage.error(error.message || '信息保存失败')
   }
 }
-const onUpdateAvatar = async () => {
-  //   await userUploadAvatarService(imgUrl.value)
-  await userStore.getUser()
-  ElMessage({ type: 'success', message: '更换头像成功' })
-}
-// 数据定义
-const registerForm = ref({
-  username: '',
-  sex: 0,
-  birth: '',
-  introduction: '',
-  location: '',
-  phoneNum: '',
-  email: ''
-})
 
+// 修改密码
 const form = ref({
-  oldPassword: '',
-  newPassword: '',
+  oldPwd: '',
+  newPwd: '',
   confirmPassword: ''
 })
-
-// 规则定义
-const SignUpRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  sex: [{ required: true, message: '请选择性别', trigger: 'change' }],
-  birth: [{ required: true, message: '请选择生日', trigger: 'change' }],
-  phoneNum: [{ required: true, message: '请输入手机号码', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }]
-}
-
+const Ref = ref()
+const router = useRouter()
 const rules = {
-  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  oldPwd: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  newPwd: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        if (value !== form.value.newPassword) {
+        if (value !== form.value.newPwd) {
           callback(new Error('两次密码不一致'))
         } else {
           callback()
@@ -65,32 +69,64 @@ const rules = {
     }
   ]
 }
-
-// 方法定义
-const goBack = (step) => {
-  window.history.go(step)
-}
-
-const saveMsg = () => {
-  // 处理保存操作
-  ElMessage.success('信息已保存')
-}
-
 const clearData = () => {
-  form.value.oldPassword = ''
-  form.value.newPassword = ''
+  form.value.oldPwd = ''
+  form.value.newPwd = ''
   form.value.confirmPassword = ''
 }
 
-const confirm = () => {
-  // 执行密码修改操作
-  ElMessage.success('密码已修改')
+const onSubmit = async () => {
+  const valid = await Ref.value.validate()
+  if (valid) {
+    try {
+      const res = await userUpdatePassService(form.value)
+      if (res.data.status !== 0) {
+        // 手动抛出错误，让 catch 分支处理
+        throw new Error(res.data.message)
+      }
+      ElMessage.success('密码已修改')
+      // 清空本地存储的 token 和 user
+      userStore.setToken('')
+      userStore.setUser({})
+      router.push('/login')
+    } catch (error) {
+      ElMessage.error(error.message || '请确认旧密码')
+    }
+  }
 }
 
-// const cancelAccount = () => {
-//   // 执行注销账号操作
-//   ElMessage.warning('账号已注销')
-// }
+// 头像上传
+const uploadRef = ref()
+const imgUrl = ref(userStore.user.user_pic)
+// const imgUrl = ref('')
+// 头像base64字符串
+const onUploadFile = (file) => {
+  // 基于 FileReader 实现图片预览
+  const reader = new FileReader()
+  reader.readAsDataURL(file.raw)
+  reader.onload = () => {
+    imgUrl.value = reader.result
+    // console.log('Base64 URL:', imgUrl.value) // 确保 Base64 生成正确
+  }
+}
+const onUpdateAvatar = async () => {
+  if (!imgUrl.value) {
+    ElMessage.error('请选择头像后再上传')
+    return
+  }
+
+  try {
+    const response = await userUploadAvatarService(imgUrl.value)
+    await userStore.getUser()
+    console.log('Upload Response:', response) // 确保服务端有返回
+    // await userGetInfoService()
+
+    ElMessage({ type: 'success', message: '更换头像成功' })
+  } catch (error) {
+    console.error('Upload Error:', error)
+    ElMessage.error(error.message || '上传头像失败')
+  }
+}
 </script>
 <template>
   <div class="setting">
@@ -100,55 +136,34 @@ const confirm = () => {
         <el-row>
           <el-col :span="12">
             <el-form
-              ref="updateForm"
+              ref="formRef"
               label-width="100px"
-              :model="registerForm"
+              :model="userInfo"
               :rules="SignUpRules"
               size="large"
             >
               <el-form-item prop="username" label="用户名">
                 <el-input
-                  v-model="registerForm.username"
+                  v-model="userInfo.username"
                   placeholder="用户名"
+                  disabled
                 ></el-input>
               </el-form-item>
-              <el-form-item label="性别">
-                <el-radio-group v-model="registerForm.sex">
-                  <el-radio :label="0">女</el-radio>
-                  <el-radio :label="1">男</el-radio>
-                  <el-radio :label="2">保密</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item prop="birth" label="生日">
-                <el-date-picker
-                  type="date"
-                  placeholder="选择日期"
-                  v-model="registerForm.birth"
-                  style="width: 100%"
-                ></el-date-picker>
-              </el-form-item>
-              <el-form-item prop="introduction" label="签名">
+              <el-form-item prop="nickname" label="昵称">
                 <el-input
-                  type="textarea"
-                  placeholder="签名"
-                  v-model="registerForm.introduction"
-                ></el-input>
-              </el-form-item>
-              <el-form-item prop="phoneNum" label="手机">
-                <el-input
-                  placeholder="手机"
-                  v-model="registerForm.phoneNum"
+                  v-model="userInfo.nickname"
+                  placeholder="昵称"
                 ></el-input>
               </el-form-item>
               <el-form-item prop="email" label="邮箱">
                 <el-input
-                  v-model="registerForm.email"
+                  v-model="userInfo.email"
                   placeholder="邮箱"
                 ></el-input>
               </el-form-item>
               <el-form-item>
                 <el-button @click="goBack(-1)">取消</el-button>
-                <el-button type="primary" @click="saveMsg()">保存</el-button>
+                <el-button type="primary" @click="submitForm()">保存</el-button>
               </el-form-item>
             </el-form>
           </el-col>
@@ -181,7 +196,7 @@ const confirm = () => {
                 type="success"
                 :icon="Upload"
                 size="large"
-                @click="onUpdateAvatar"
+                @click="onUpdateAvatar()"
               >
                 上传头像
               </el-button>
@@ -193,23 +208,23 @@ const confirm = () => {
         <el-row>
           <el-col :span="10"
             ><el-form
-              ref="passwordForm"
+              ref="Ref"
               label-width="100px"
               :model="form"
               :rules="rules"
             >
               <el-form-item label="旧密码" prop="oldPassword">
-                <el-input type="password" v-model="form.oldPassword" />
+                <el-input type="password" v-model="form.oldPwd" />
               </el-form-item>
               <el-form-item label="新密码" prop="newPassword">
-                <el-input type="password" v-model="form.newPassword" />
+                <el-input type="password" v-model="form.newPwd" />
               </el-form-item>
               <el-form-item label="密码确认" prop="confirmPassword">
                 <el-input type="password" v-model="form.confirmPassword" />
               </el-form-item>
               <el-form-item>
                 <el-button @click="clearData()">重置</el-button>
-                <el-button type="primary" @click="confirm()"
+                <el-button type="primary" @click="onSubmit()"
                   >确认修改</el-button
                 >
               </el-form-item>
