@@ -58,11 +58,9 @@ const login = async () => {
   try {
     await form.value.validate()
     const res = await userLoginService(formModel.value)
-    console.log('登录返回数据：', res)
 
     if (res.data.token) {
       userStore.setToken(res.data.token)
-      console.log('存储的 token:', userStore.token)
       ElMessage.success('登录成功')
       router.push('/mymusic')
     } else {

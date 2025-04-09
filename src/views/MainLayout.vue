@@ -1,13 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
+import avatar from '@/assets/avatar.png'
 const userStore = useUserStore()
 const router = useRouter()
 const keywords = ref('')
 onMounted(() => {
   userStore.getUser()
+})
+// 安全访问用户信息
+const userAvatar = computed(() => {
+  return userStore.user?.user_pic || avatar
 })
 const goSearch = () => {
   if (!keywords.value.trim()) return
@@ -52,7 +57,6 @@ const menuList = [
           </div>
 
           <div v-if="!userStore.token" class="not-logged-in">
-            <!-- <el-avatar :src="userStore.user.user_pic || avatar" /> -->
             <el-button
               class="login-btn"
               type="primary"
@@ -61,9 +65,7 @@ const menuList = [
             >
           </div>
           <div v-else class="personal-content">
-            <el-avatar
-              :src="userStore.user.user_pic || '@/assets/avatar.png'"
-            />
+            <el-avatar :src="userAvatar" />
           </div>
         </div>
       </el-header>

@@ -118,7 +118,6 @@ const goAblum = (item) => {
 .image-error {
   width: 100%;
   height: 100%;
-  background-image: url(../assets/例.jpg);
   background-size: contain;
 }
 

@@ -1,41 +1,59 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Edit } from '@element-plus/icons-vue'
 import avatar from '@/assets/avatar.png'
-import { onMounted } from 'vue'
 import { useUserStore } from '@/stores'
 import { useRouter } from 'vue-router'
-import { userGetFavoriteListService } from '@/api/user'
+import { userGetFavoriteListService, userGetInfoService } from '@/api/user'
 
 const userStore = useUserStore()
 const router = useRouter()
-
+const loading = ref(true)
 // 判断登录状态：当 token 存在则认为用户已登录
 const isLoggedIn = computed(() => !!userStore.token)
-const {
-  user: { nickname, email, id, user_pic }
-} = useUserStore()
-const personalInfo = ref({
-  nickname,
-  email,
-  user_pic
-})
+
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const res = await userGetInfoService(user_id.value)
+    if (res.data.status === 0) {
+      userStore.setUser(res.data.data)
+    } else {
+      ElMessage.error('获取用户信息失败')
+    }
+  } catch (error) {
+    ElMessage.error('获取用户信息失败：' + error.message)
+  }
+}
+
+const userInfo = computed(() => userStore.user || {})
+const personalInfo = computed(() => ({
+  nickname: userInfo.value.nickname ?? '未命名用户',
+  email: userInfo.value.email ?? '未绑定邮箱',
+  user_pic: userInfo.value.user_pic ?? avatar
+}))
 // 当前用户 id
-const user_id = ref(id)
+// const user_id = ref(id)
+const user_id = computed(() => userInfo.value.id || null)
 // 用来保存用户收藏的歌曲 id 列表
 const collectSongList = ref([])
 onMounted(async () => {
   // 未登录时不进行数据初始化
-  if (!isLoggedIn.value) return
+  if (!isLoggedIn.value) {
+    loading.value = false
+    return
+  }
 
   try {
-    // await fetchUserInfo()
+    await fetchUserInfo()
     if (user_id.value) {
       await fetchUserFavorites()
     }
   } catch (error) {
     ElMessage.error('初始化失败: ' + error.message)
+  } finally {
+    loading.value = false
   }
 })
 // 获取用户收藏列表
@@ -68,7 +86,8 @@ const logout = () => {
 }
 </script>
 <template>
-  <div class="personal">
+  <div v-if="loading" class="loading-text">加载用户信息中...</div>
+  <div v-else class="personal">
     <!-- 未登录时显示提示信息 -->
     <div v-if="!userStore.token" class="not-logged-in">
       <p>请先登录或注册</p>

@@ -8,14 +8,66 @@ export const useArtistStore = defineStore(
     const allPlayList = ref([]) // 存储歌手列表
     const songDetails = ref(null) // 存储歌手的详细信息
     const currentSongList = ref([]) // 存储当前歌手的歌曲列表
-
+    const artistIds = [
+      '2CIMQHirSU0MQqyYHq0eOx',
+      '57dN52uHvrHOxijzpIgu3E',
+      '1vCWHaC5f2uS3yhpwWbIA6',
+      '2YZyLoL8N0Wb9xBt1NhZWg',
+      '1Xyo4u8uXC1ZmMpatF05PJ',
+      '06HL4z0CvFAxyc27GXpf02',
+      '66CXWjxzNUsdJxJ2JdwvnR',
+      '0Y5tJX1MQlPlqiwlOH1tJY',
+      '6qqNVTkY8uBg9cP3Jd7DAH',
+      '6vWDO969PvNqNYHIOW5v0m',
+      '2elBjNSdBE2Y3f0j1mjrql',
+      '2QcZxAgcs2I1q7CtCkl6MI',
+      '1YrtUPrWcPfgdl9BaD9nhd',
+      '40tNK2YedBV2jRFAHxpifB',
+      '7Dx7RhX0mFuXhCOUgB01uM',
+      '246dkjvS1zLTtiykXe5h60',
+      '5pKCCKE2ajJHZ9KAiaK11H',
+      '7GlBOeep6PqTfFi59PTUUN',
+      '4oUHIQIBe0LHzYfvXNW4QM',
+      '7aRC4L63dBn3CiLDuWaLSI',
+      '7rXM91kSsqGzvYANukdQJD',
+      '1cg0bYpP5e2DNG0RgK2CMN',
+      '2F5W6Rsxwzg0plQ0w8dSyt',
+      '0SIXZXJCAhNU8sxK0qm7hn',
+      '75udD9hen8NeHTe92rUNLa',
+      '1HY2Jd0NmPuamShAr6KMms',
+      '5K4W6rqBFWDnAN6FQUkS6x',
+      '3df3XLKuqTQ6iOSmi0K3Wp',
+      '3AroL2oDPiAnMpTmIQv3KP',
+      '1McMsnEElThX1knmY4oliG',
+      '1kfWoWgCugPkyxQP8lkRlY',
+      '1Hu58yHg2CXNfDhlPd7Tdd',
+      '2dw80Uni5l7wd9zZFn7Ltu',
+      '1Hu58yHg2CXNfDhlPd7Tdd',
+      '7qJmFr579WC8MMGj4PiWdu'
+    ]
+    const page = ref(0)
+    const pageSize = 10
+    const isLoading = ref(false)
+    const hasMore = ref(true)
     // 获取歌手数据
     // 请求获取歌手数据
     const fetchTopArtists = async () => {
-      const artistIds =
-        '2CIMQHirSU0MQqyYHq0eOx,57dN52uHvrHOxijzpIgu3E,1vCWHaC5f2uS3yhpwWbIA6,2YZyLoL8N0Wb9xBt1NhZWg,1Xyo4u8uXC1ZmMpatF05PJ,06HL4z0CvFAxyc27GXpf02,66CXWjxzNUsdJxJ2JdwvnR,0Y5tJX1MQlPlqiwlOH1tJY,6qqNVTkY8uBg9cP3Jd7DAH,6vWDO969PvNqNYHIOW5v0m,2elBjNSdBE2Y3f0j1mjrql,2QcZxAgcs2I1q7CtCkl6MI,1YrtUPrWcPfgdl9BaD9nhd,40tNK2YedBV2jRFAHxpifB,7Dx7RhX0mFuXhCOUgB01uM,246dkjvS1zLTtiykXe5h60,5pKCCKE2ajJHZ9KAiaK11H,7GlBOeep6PqTfFi59PTUUN,4oUHIQIBe0LHzYfvXNW4QM,7aRC4L63dBn3CiLDuWaLSI,7rXM91kSsqGzvYANukdQJD,1cg0bYpP5e2DNG0RgK2CMN,2F5W6Rsxwzg0plQ0w8dSyt,0SIXZXJCAhNU8sxK0qm7hn,75udD9hen8NeHTe92rUNLa' // 确保ID正确
+      if (isLoading.value || !hasMore.value) return
+
+      isLoading.value = true
+      const start = page.value * pageSize
+      const end = start + pageSize
+      const batchIds = artistIds.slice(start, end).join(',')
+
+      if (!batchIds) {
+        hasMore.value = false
+        isLoading.value = false
+        return
+      }
+
       try {
-        const data = await getArtistData({ ids: artistIds })
+        const data = await getArtistData({ ids: batchIds })
+        console.log(`获取歌手数据：`, data)
 
         // 添加数据校验
         if (!data?.artists) {
@@ -23,10 +75,19 @@ export const useArtistStore = defineStore(
           throw new Error('Invalid artist data format')
         }
 
-        allPlayList.value = data.artists
+        // allPlayList.value = data.artists
+        allPlayList.value = [...allPlayList.value, ...data.artists]
+        page.value++
+        // if (data.artists.length < pageSize) hasMore.value = false
+        hasMore.value = end < artistIds.length
+        console.log(
+          `加载了 ${data.artists.length} 个歌手，剩余 ${artistIds.length - end}`
+        )
       } catch (error) {
         console.error('Error fetching artists:', error)
-        allPlayList.value = [] // 清空数据避免渲染错误
+        // allPlayList.value = [] // 清空数据避免渲染错误
+      } finally {
+        isLoading.value = false
       }
     }
     // 获取歌手数据
@@ -70,7 +131,9 @@ export const useArtistStore = defineStore(
       currentSongList,
       fetchArtistData,
       fetchTopTracks,
-      fetchTopArtists
+      fetchTopArtists,
+      isLoading,
+      hasMore
     }
   },
   {

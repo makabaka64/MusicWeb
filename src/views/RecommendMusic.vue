@@ -35,12 +35,6 @@ const top5Artists = computed(() => {
 const top5Playlists = computed(() => {
   return (playlistStore.allPlayList || []).slice(0, 5)
 })
-// const top5Artists = computed(() => artistStore.allPlayList.slice(0, 5))
-console.log('top5Artists:', top5Artists.value)
-console.log('歌手图片', top5Artists.value[0].images[0].url)
-
-// 只获取前五个专辑
-// const top5Playlists = computed(() => playlistStore.allPlayList.slice(0, 5))
 
 // 轮播图数据
 const images = ref([
