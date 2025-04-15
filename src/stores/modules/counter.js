@@ -9,18 +9,55 @@ export const usePlaylistStore = defineStore(
     const allPlayList = ref([]) // 存储歌单列表
     const currentPlaylist = ref(null) // 存储当前歌单详情
     const currentSongList = ref([]) // 存储当前歌单的歌曲
-
+    const albumIds = [
+      '382ObEPsp2rxGrnsizN5TX',
+      '1A2GTWGtFfWp7KSQTwWOyo',
+      '2noRn2Aes5aoNVsU6iWThc',
+      '1kCHru7uhxBUdzkm4gzRQc',
+      '5H7ixXZfsNMGbIE5OBSpcb',
+      '7aJuG4TFXa2hmE4z1yxc3n',
+      '6i7mF7whyRJuLJ4ogbH2wh',
+      '03guxdOi12XJbnvxvxbpwG',
+      '3mH6qwIy9crq0I9YQbOuDf',
+      '3iPSVi54hsacKKl1xIR2eH',
+      '5tiWzEgxHiddFZUt5Swfzg',
+      '6WdM1OfmVIPuQ56QPmaJIr',
+      '4tPgavx8TzhK03utfMCgHL',
+      '2CKvwKuHcZvnt4mC9DB6Fk',
+      '6cbwstHlsAIIWurIIXXBPd',
+      '3w32SV56JvtJXsrYtThwzP',
+      '0fSfkmx0tdPqFYkJuNX74a',
+      '54vGSK50oe08qxz2xXECEC',
+      '2MHUaRi9OCyTN02SoyRRBJ',
+      '60UzB8mOCMpc7xkuJE6Bwc'
+    ]
+    const page = ref(0)
+    const pageSize = 10
+    const isLoading = ref(false)
+    const hasMore = ref(true)
     // 获取所有歌单数据
     const fetchAllPlaylists = async () => {
-      const albumIds =
-        '382ObEPsp2rxGrnsizN5TX,1A2GTWGtFfWp7KSQTwWOyo,2noRn2Aes5aoNVsU6iWThc,1kCHru7uhxBUdzkm4gzRQc,5H7ixXZfsNMGbIE5OBSpcb,7aJuG4TFXa2hmE4z1yxc3n,6i7mF7whyRJuLJ4ogbH2wh,03guxdOi12XJbnvxvxbpwG,3mH6qwIy9crq0I9YQbOuDf,3iPSVi54hsacKKl1xIR2eH,5tiWzEgxHiddFZUt5Swfzg,6WdM1OfmVIPuQ56QPmaJIr,4tPgavx8TzhK03utfMCgHL,2CKvwKuHcZvnt4mC9DB6Fk,6cbwstHlsAIIWurIIXXBPd,3w32SV56JvtJXsrYtThwzP,0fSfkmx0tdPqFYkJuNX74a,54vGSK50oe08qxz2xXECEC,2MHUaRi9OCyTN02SoyRRBJ,60UzB8mOCMpc7xkuJE6Bwc'
+      if (isLoading.value || !hasMore.value) return
+      isLoading.value = true
+      const start = page.value * pageSize
+      const end = start + pageSize
+      const batchIds = albumIds.slice(start, end).join(',')
+      if (!batchIds) {
+        hasMore.value = false
+        isLoading.value = false
+        return
+      }
       try {
-        const data = await getPlaylistData({ ids: albumIds })
+        const data = await getPlaylistData({ ids: batchIds })
         if (!data?.albums) throw new Error('Invalid playlist data')
-        allPlayList.value = data.albums
+        allPlayList.value = [...allPlayList.value, ...data.albums]
+        page.value++
+        hasMore.value = end < albumIds.length
       } catch (error) {
         console.error('Error fetching playlists:', error)
-        allPlayList.value = []
+        // allPlayList.value = []
+      } finally {
+        isLoading.value = false
       }
     }
 
@@ -66,7 +103,9 @@ export const usePlaylistStore = defineStore(
       currentSongList,
       fetchAllPlaylists,
       fetchPlaylistDetail,
-      fetchPlaylistTracks
+      fetchPlaylistTracks,
+      isLoading,
+      hasMore
     }
   },
   {

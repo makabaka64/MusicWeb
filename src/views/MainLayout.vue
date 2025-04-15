@@ -23,7 +23,8 @@ const menuList = [
   { name: '首页', path: '/recommend' },
   { name: '歌手', path: '/artist' },
   { name: '歌单', path: '/album' },
-  { name: '我的音乐', path: '/mymusic' }
+  { name: '我的音乐', path: '/mymusic' },
+  { name: '推荐', path: '/recommendview' }
 ]
 </script>
 

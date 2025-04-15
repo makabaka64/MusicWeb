@@ -27,8 +27,6 @@ const fetchSearchResults = async (query) => {
 }
 // 点击行时调用：根据歌曲名称与歌手名称构造查询，并获取预览音频 URL 播放
 const handleClick = async (row) => {
-  console.log('点击的歌曲:', row)
-
   try {
     // 调用 getTrackDetail 方法获取单曲详情数据
     const track = await getTrackDetail({ id: row.id })

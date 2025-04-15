@@ -33,19 +33,6 @@ const goAblum = (item) => {
               </div>
             </template>
           </el-image>
-          <!-- <el-image
-            lazy
-            :scroll-container="'.play-body'"
-            class="card-img"
-            fit="contain"
-            :src="item.images?.[0]?.url || './assets/例.jpg'"
-            :alt="item.name"
-          >
-            < 图片加载失败时的占位内容  -->
-          <!-- <template #error>
-              <div class="image-error"></div>
-            </template> -->
-          <!-- </el-image>  -->
           <div class="mask" @click="goAblum(item)"></div>
         </div>
         <!-- 显示艺术家名称 -->

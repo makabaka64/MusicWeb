@@ -48,6 +48,10 @@ const router = createRouter({
         {
           path: '/search',
           component: () => import('@/views/SearchPage.vue')
+        },
+        {
+          path: 'recommendview',
+          component: () => import('@/views/RecommendView.vue')
         }
       ]
     }

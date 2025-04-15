@@ -22,10 +22,6 @@ onMounted(async () => {
     loading.value.playlists = false
   }
 })
-// onMounted(async () => {
-//   await artistStore.fetchTopArtists()
-//   await playlistStore.fetchAllPlaylists()
-// })
 
 // 只获取前五个歌手
 const top5Artists = computed(() => {

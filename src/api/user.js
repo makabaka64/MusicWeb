@@ -1,81 +1,18 @@
 import request from '@/utils/request'
 
 // 获取歌手
-export const getArtistData = (params) => {
-  return request({
-    url: '/artists',
-    method: 'GET',
-    params: params
-  })
-    .then((response) => {
-      return response.data
-    })
-    .catch((error) => {
-      throw error
-    })
-}
+export const getArtistData = (params) => request.get('/artists', { params })
 //获取歌单
-export const getPlaylistData = (params) => {
-  return request({
-    url: '/albums',
-    method: 'GET',
-    params: params
-  })
-    .then((response) => {
-      return response.data
-    })
-    .catch((error) => {
-      throw error
-    })
-}
+export const getPlaylistData = (params) => request.get('/albums', { params })
 // 获取歌手热门曲目信息
-export const getTopTracks = (params) => {
-  return request({
-    url: '/top-tracks',
-    method: 'GET',
-    params: params //
-  })
-    .then((response) => response.data)
-    .catch((error) => {
-      throw error
-    })
-}
+export const getTopTracks = (params) => request.get('/top-tracks', { params })
 // 获取歌单歌曲
-export const getPlaylistTracks = (params) => {
-  return request({
-    url: '/tracks',
-    method: 'GET',
-    params: params
-  })
-    .then((response) => response.data)
-    .catch((error) => {
-      throw error
-    })
-}
+export const getPlaylistTracks = (params) => request.get('/tracks', { params })
 // 搜索
-export const getSearchResults = (params) => {
-  return request({
-    url: '/search',
-    method: 'GET',
-    params
-  })
-    .then((response) => response.data)
-    .catch((error) => {
-      throw error
-    })
-}
+export const getSearchResults = (params) => request.get('/search', { params })
 // 获取单曲详情（用于音频播放）
-export const getTrackDetail = (params) => {
-  return request({
-    url: '/track',
-    method: 'GET',
-    params
-  })
-    .then((response) => response.data)
-    .catch((error) => {
-      throw error
-    })
-}
+export const getTrackDetail = (params) => request.get('/track', { params })
+
 //注册接口
 export const userRegisterService = ({ username, password, repassword }) =>
   request.post('/api/reguser', { username, password, repassword })
@@ -122,3 +59,10 @@ export const deletePlaylistCommentService = (commentId) =>
 // 点赞评论
 export const likePlaylistCommentService = (commentId) =>
   request.post(`/my/comments/${commentId}/like`)
+
+// 协同推荐
+export const getCollaborativeRec = (userId) =>
+  request.get(`/my/collaborative/${userId}`)
+
+// 热门推荐
+export const getHotRec = (userId) => request.get(`/my/hotRecommend/${userId}`)

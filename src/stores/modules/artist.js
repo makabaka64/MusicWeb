@@ -50,10 +50,8 @@ export const useArtistStore = defineStore(
     const isLoading = ref(false)
     const hasMore = ref(true)
     // 获取歌手数据
-    // 请求获取歌手数据
     const fetchTopArtists = async () => {
       if (isLoading.value || !hasMore.value) return
-
       isLoading.value = true
       const start = page.value * pageSize
       const end = start + pageSize
