@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Upload } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores'
@@ -10,7 +10,7 @@ import {
   userUpdatePassService
 } from '@/api/user'
 const userStore = useUserStore()
-
+const tabPosition = ref('left')
 const {
   user: { username, nickname, email, id },
   getUser
@@ -127,11 +127,24 @@ const onUpdateAvatar = async () => {
     ElMessage.error(error.message || '上传头像失败')
   }
 }
+// 监听页面宽度变化
+const updateTabPosition = () => {
+  tabPosition.value = window.innerWidth < 768 ? 'top' : 'left'
+}
+
+onMounted(() => {
+  updateTabPosition()
+  window.addEventListener('resize', updateTabPosition)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateTabPosition)
+})
 </script>
 <template>
   <div class="setting">
     <h1>设置</h1>
-    <el-tabs tab-position="left">
+    <el-tabs :tab-position="tabPosition">
       <el-tab-pane label="个人资料" class="content">
         <el-row>
           <el-col :span="12">
@@ -275,20 +288,31 @@ const onUpdateAvatar = async () => {
       }
     }
   }
-
-  @media screen and (min-width: 768px) {
-    .setting {
-      margin: 30px 10%;
-      margin-top: 0;
-      padding: 20px;
-      min-height: 60vh;
-    }
+}
+@media screen and (max-width: 768px) {
+  .el-col {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
   }
 
-  @media screen and (max-width: 1024px) {
-    .setting {
-      padding: 20px;
-    }
+  .avatar-uploader :deep() .avatar {
+    width: 100%;
+    height: auto;
+  }
+
+  .el-upload {
+    width: 50% !important;
+  }
+
+  .el-button {
+    width: 50%;
+    margin-bottom: 10px;
+  }
+
+  .content {
+    text-align: left;
+    padding-left: 10px;
+    padding-right: 10px;
   }
 }
 </style>

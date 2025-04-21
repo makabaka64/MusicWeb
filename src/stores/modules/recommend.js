@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getCollaborativeRec, getTrackDetail, getHotRec } from '@/api/user'
+import {
+  getCollaborativeRec,
+  getTrackDetail,
+  getHotRec,
+  userGetFavoriteListService
+} from '@/api/user'
 
 export const useRecommendStore = defineStore('recommend', () => {
   const collaborativeList = ref([])
@@ -8,23 +13,43 @@ export const useRecommendStore = defineStore('recommend', () => {
   const hasCollections = ref(false)
   const loading = ref(true)
 
-  // 加载所有推荐
   const loadAllRecommendations = async (userId) => {
     try {
       loading.value = true
+      const favorite = await userGetFavoriteListService(userId)
+      const favoriteList = favorite?.data.data
+
+      // 热门推荐
       const hotRes = await getHotRec(userId)
-      const hotListIds = hotRes.data.data.map((item) => item.song_id)
-      const hotListTracksRes = await Promise.all(
+      const hotRawList = hotRes?.data?.data
+
+      if (!Array.isArray(hotRawList)) {
+        console.warn('🔥 热门推荐返回的不是数组！', hotRawList)
+        return
+      }
+      const hotListIds = hotRawList.map((item) => item.song_id)
+      hotList.value = await Promise.all(
         hotListIds.map((id) => getTrackDetail({ id }))
       )
-      hotList.value = hotListTracksRes
+
+      // 协同推荐
       const collabRes = await getCollaborativeRec(userId)
-      const playlistIds = collabRes.data.data.map((item) => item.song_id)
+      const collabRawList = collabRes?.data?.data
+      if (!Array.isArray(collabRawList)) {
+        console.warn('❗协同推荐返回的不是数组', collabRawList)
+        return
+      }
+      const playlistIds = collabRawList.map((item) => item.song_id)
       const playlistTracksRes = await Promise.all(
         playlistIds.map((id) => getTrackDetail({ id }))
       )
+
       collaborativeList.value = playlistTracksRes
-      hasCollections.value = collaborativeList.value.length > 0
+      hasCollections.value = favoriteList.length > 3
+    } catch (err) {
+      console.error('加载推荐失败:', err)
+      hotList.value = []
+      collaborativeList.value = []
     } finally {
       loading.value = false
     }

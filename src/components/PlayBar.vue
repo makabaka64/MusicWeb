@@ -247,7 +247,7 @@ onBeforeUnmount(() => {
         ></yin-icon>
         <!-- 播放/暂停 -->
         <yin-icon
-          class="yin-play-show"
+          class="yin-play-show1"
           :icon="playStateList[playState]"
           @click="changePlayState"
         ></yin-icon>
@@ -261,13 +261,14 @@ onBeforeUnmount(() => {
       <div class="song-ctr song-edit">
         <!-- 收藏 -->
         <yin-icon
-          class="yin-play-show"
+          class="yin-play-show1"
           :class="{ active: isCollection }"
           :icon="isCollection ? iconList.like : iconList.dislike"
           @click="changeCollection"
         ></yin-icon>
         <!-- 歌单列表/侧边栏 -->
         <yin-icon
+          class="yin-play-show"
           ref="toggleIcon"
           :icon="iconList.LIEBIAO"
           @click="toggleSidebar"
@@ -342,7 +343,7 @@ onBeforeUnmount(() => {
         font-size: 14px;
       }
       .time-info {
-        font-size: 12px;
+        font-size: 14px;
         color: grey;
       }
     }
@@ -425,6 +426,9 @@ onBeforeUnmount(() => {
   }
 
   .yin-play-show {
+    display: none;
+  }
+  .sidebar {
     display: none;
   }
 }

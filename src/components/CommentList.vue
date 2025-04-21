@@ -1,235 +1,241 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { ElInput, ElButton, ElImage, ElIcon } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElButton, ElInput } from 'element-plus'
 import { throttle } from 'lodash'
+import { useUserStore } from '@/stores'
+import CommentItem from '@/components/CommentItem.vue'
 import {
   getPlaylistCommentsService,
   addPlaylistCommentService,
   deletePlaylistCommentService,
   likePlaylistCommentService
 } from '@/api/user'
-import { useUserStore } from '@/stores'
-const props = defineProps({
-  playId: String, // 由父组件传递的歌单 ID
-  type: Number // 评论类型（可扩展）
-})
-// 获取当前用户信息
-const {
-  user: { nickname, id, user_pic }
-} = useUserStore()
-const commentList = ref([])
-const textarea = ref('')
 
-// 获取评论列表
+const props = defineProps({
+  playId: String,
+  type: Number
+})
+
+const { user } = useUserStore()
+const commentList = ref([])
+const commentText = ref('')
+const currentReply = ref({
+  parentId: null,
+  targetUser: null
+})
+
+// 获取并构建评论树
 const fetchComments = async () => {
-  if (!props.playId) return
   try {
     const { data } = await getPlaylistCommentsService(props.playId)
-    commentList.value = data || []
+    commentList.value = buildCommentTree(data)
+    // const comments = await getPlaylistCommentsService(props.playId)
+    // commentList.value = buildCommentTree(comments)
   } catch (error) {
-    ElMessage.error('加载评论失败')
-    console.error('获取评论失败:', error)
+    ElMessage.error('评论加载失败')
+    console.error('Error fetching comments:', error)
   }
 }
 
-// 提交新评论
+// 转换平铺数据为树形结构
+const buildCommentTree = (comments) => {
+  const map = new Map()
+  const roots = []
+
+  // 创建映射并初始化children
+  comments.forEach((comment) => {
+    map.set(comment.id, { ...comment, children: [] })
+  })
+
+  // 构建树结构
+  comments.forEach((comment) => {
+    const node = map.get(comment.id)
+    if (comment.parent_id && map.has(comment.parent_id)) {
+      const parent = map.get(comment.parent_id)
+      parent.children.push(node)
+    } else {
+      roots.push(node)
+    }
+  })
+
+  // 递归排序（按时间倒序）
+  const sortComments = (nodes) => {
+    return nodes
+      .sort((a, b) => new Date(b.create_time) - new Date(a.create_time))
+      .map((node) => ({
+        ...node,
+        children: sortComments(node.children)
+      }))
+  }
+
+  return sortComments(roots)
+}
+
+// 提交评论/回复
 const submitComment = async () => {
-  if (!textarea.value.trim()) {
-    ElMessage.warning('评论不能为空')
+  if (!commentText.value.trim()) {
+    ElMessage.warning('请输入评论内容')
     return
   }
-  try {
-    const newComment = {
-      content: textarea.value.trim(),
-      user_id: id,
-      nickname: nickname || '匿名用户',
-      user_pic: user_pic || '@/assets/avatar.png',
-      playlist_id: props.playId
-    }
-    console.log('新评论:', newComment)
 
-    await addPlaylistCommentService(newComment)
-    textarea.value = '' // 清空输入框
-    ElMessage.success('评论成功')
-    fetchComments() // 重新获取评论列表
+  try {
+    await addPlaylistCommentService({
+      content: commentText.value.trim(),
+      playlist_id: props.playId,
+      parent_id: currentReply.value.parentId,
+      user_id: user.id,
+      nickname: user.nickname,
+      user_pic: user.user_pic
+    })
+
+    ElMessage.success(currentReply.value.parentId ? '回复成功' : '评论成功')
+    commentText.value = ''
+    currentReply.value = { parentId: null, targetUser: null }
+    await fetchComments()
   } catch (error) {
-    ElMessage.error('提交评论失败')
-    console.error('提交评论失败:', error)
+    ElMessage.error(error.response?.data?.error || '提交失败')
+    console.error('Submit error:', error)
   }
 }
 
-// 删除评论（仅限当前用户）
-const deleteComment = async (commentId, index) => {
+// 处理回复
+const handleReply = (comment) => {
+  currentReply.value = {
+    parentId: comment.id,
+    targetUser: comment.nickname
+  }
+}
+
+// 取消回复
+const cancelReply = () => {
+  currentReply.value = { parentId: null, targetUser: null }
+}
+
+// 删除评论
+const handleDelete = async (commentId) => {
   try {
     await deletePlaylistCommentService(commentId)
-    commentList.value.splice(index, 1) // 直接删除 UI 中的评论
-    ElMessage.success('评论已删除')
+    ElMessage.success('删除成功')
+    await fetchComments()
   } catch (error) {
-    ElMessage.error('删除评论失败')
-    console.error('删除评论失败:', error)
+    ElMessage.error('删除失败')
+    console.error('Delete error:', error)
   }
 }
 
-// 点赞评论
-const likeComment = throttle(async (commentId) => {
+// 点赞评论（节流处理）
+const handleLike = throttle(async (commentId) => {
   try {
     await likePlaylistCommentService(commentId)
-    const comment = commentList.value.find((c) => c.id === commentId)
-    if (comment) comment.up += 1
+    const updateLikes = (comments) =>
+      comments.map((comment) => {
+        if (comment.id === commentId) {
+          return { ...comment, up: comment.up + 1 }
+        }
+        if (comment.children?.length) {
+          return { ...comment, children: updateLikes(comment.children) }
+        }
+        return comment
+      })
+    commentList.value = updateLikes(commentList.value)
   } catch (error) {
-    ElMessage.error('点赞失败', error)
+    ElMessage.error('点赞失败')
+    console.error('Like error:', error)
   }
 }, 1000)
 
-// 格式化日期
-const formatDate = (timestamp) => {
-  if (!timestamp) return '未知时间'
-  const date = new Date(timestamp)
-  return date.toLocaleString()
-}
-
-// 格式化头像 URL
-const attachImageUrl = (user_pic) => {
-  return user_pic || new URL('@/assets/avatar.png', import.meta.url).href
-}
-// 监听 playId 变化，重新获取评论
-watch(
-  () => props.playId,
-  (newVal) => {
-    if (newVal) {
-      fetchComments()
-    }
-  },
-  { immediate: true }
-)
-// 组件加载时获取评论
+// 初始化加载
 onMounted(fetchComments)
+watch(() => props.playId, fetchComments)
 </script>
+
 <template>
-  <div class="comment">
-    <h2 class="comment-title">
-      <span>评论</span>
-      <span class="comment-desc">共 {{ commentList.length }} 条评论</span>
-    </h2>
-    <el-input
-      class="comment-input"
-      type="textarea"
-      placeholder="期待您的精彩评论..."
-      :rows="2"
-      v-model="textarea"
-    />
-    <el-button class="sub-btn" type="primary" @click="submitComment()"
-      >发表评论</el-button
-    >
+  <div class="comment-container">
+    <div class="header">
+      <h3>评论（{{ commentList.length }}）</h3>
+
+      <div class="reply-notice" v-if="currentReply.targetUser">
+        正在回复 @{{ currentReply.targetUser }}
+        <ElButton link @click="cancelReply">取消回复</ElButton>
+      </div>
+
+      <div class="input-area">
+        <ElInput
+          v-model="commentText"
+          type="textarea"
+          :rows="3"
+          :placeholder="
+            currentReply.targetUser
+              ? `回复 @${currentReply.targetUser}...`
+              : '发表你的精彩评论...'
+          "
+        />
+        <div class="actions">
+          <ElButton type="primary" size="small" @click="submitComment">
+            {{ currentReply.targetUser ? '发送回复' : '发表评论' }}
+          </ElButton>
+        </div>
+      </div>
+    </div>
+
+    <div class="comment-list">
+      <template v-if="commentList.length > 0">
+        <CommentItem
+          v-for="comment in commentList"
+          :key="comment.id"
+          :comment="comment"
+          :current-user-id="user.id"
+          :depth="0"
+          @reply="handleReply"
+          @delete="handleDelete"
+          @like="handleLike"
+        />
+      </template>
+      <div v-else class="empty">
+        <el-empty description="暂无评论，快来抢沙发吧~" />
+      </div>
+    </div>
   </div>
-  <ul class="popular">
-    <li v-for="(comment, index) in commentList" :key="comment.id">
-      <el-image
-        class="popular-img"
-        fit="contain"
-        :src="attachImageUrl(comment.user_pic)"
-      />
-      <div class="popular-msg">
-        <ul>
-          <li class="name">{{ comment.nickname }}</li>
-          <li class="time">{{ formatDate(comment.create_time) }}</li>
-          <li class="content">{{ comment.content }}</li>
-        </ul>
-      </div>
-
-      <div class="comment-ctr">
-        <el-button @click="likeComment(comment.id)"
-          >👍 {{ comment.up }}</el-button
-        >
-        <el-icon
-          v-if="comment.user_id === id"
-          @click="deleteComment(comment.id, index)"
-          ><delete
-        /></el-icon>
-      </div>
-    </li>
-  </ul>
 </template>
-<style lang="scss" scoped>
-/*评论*/
-.comment {
-  position: relative;
-  margin-bottom: 60px;
 
-  .comment-title {
-    height: 50px;
-    line-height: 50px;
+<style scoped>
+.comment-container {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 
-    .comment-desc {
+  .header {
+    margin-bottom: 24px;
+
+    h3 {
+      margin-bottom: 16px;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .reply-notice {
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      background: #f5f7fa;
+      border-radius: 4px;
       font-size: 14px;
-      font-weight: 400;
-      color: gray;
-      margin-left: 10px;
+      color: #666;
     }
   }
 
-  .comment-input {
-    display: flex;
-    margin-bottom: 20px;
-  }
+  .input-area {
+    margin-bottom: 24px;
 
-  .sub-btn {
-    position: absolute;
-    right: 0;
-  }
-}
-
-/*热门评论*/
-.popular {
-  width: 95%;
-  > li {
-    border-bottom: solid 1px rgba(0, 0, 0, 0.1);
-    padding: 15px 0;
-    display: flex;
-    .popular-img {
-      width: 50px;
-    }
-
-    .popular-msg {
-      padding: 0 20px;
-      flex: 1;
-      li {
-        list-style: none;
-        width: 100%;
-      }
-      .time {
-        font-size: 0.6rem;
-        color: rgba(0, 0, 0, 0.5);
-      }
-      .name {
-        color: rgba(0, 0, 0, 0.5);
-      }
-      .content {
-        font-size: 1rem;
-      }
-    }
-
-    .comment-ctr {
-      display: flex;
-      align-items: center;
-      width: 80px;
-      font-size: 1rem;
-      cursor: pointer;
-
-      .el-icon {
-        margin: 0 10px;
-      }
-
-      &:hover,
-      :deep(.icon):hover {
-        color: grey;
-      }
+    .actions {
+      margin-top: 12px;
+      text-align: right;
     }
   }
-}
-.icon {
-  size: 1em;
+
+  .empty {
+    padding: 40px 0;
+    color: #909399;
+  }
 }
 </style>

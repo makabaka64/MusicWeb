@@ -10,7 +10,6 @@ const router = useRouter()
 const recommendStore = useRecommendStore()
 const { user } = useUserStore()
 const gocomment = () => {
-  // 跳转到评论页面
   router.push({ path: '/recommend' })
 }
 onMounted(async () => {
@@ -32,7 +31,6 @@ const loading = computed(() => recommendStore.loading)
       <p>收藏至少3首歌曲，系统将为你生成个性化推荐</p>
       <div class="hot-recommend" @click="gocomment">
         <h3>热门推荐</h3>
-        <hot-list />
       </div>
     </div>
 
@@ -45,7 +43,13 @@ const loading = computed(() => recommendStore.loading)
       <!-- 协同过滤推荐 -->
       <section class="recommend-section">
         <h3>🎧 相似用户也喜欢</h3>
-        <song-grid :tracks="recommendStore.collaborativeList" />
+        <song-grid
+          v-if="recommendStore.collaborativeList.length > 0"
+          :tracks="recommendStore.collaborativeList"
+        />
+        <div v-else class="empty-tip">
+          <p>暂无和你相似的用户，请收藏更多音乐吧！</p>
+        </div>
       </section>
     </div>
   </div>

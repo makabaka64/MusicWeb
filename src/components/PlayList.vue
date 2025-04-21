@@ -18,7 +18,6 @@ const goAblum = (item) => {
     <ul class="play-body">
       <li class="card-frame" v-for="(item, index) in playList" :key="index">
         <div class="card" @click="goAblum(item)">
-          <!-- 修改重点：绑定 images[0].url -->
           <el-image
             class="card-img"
             fit="cover"
@@ -35,12 +34,12 @@ const goAblum = (item) => {
           </el-image>
           <div class="mask" @click="goAblum(item)"></div>
         </div>
-        <!-- 显示艺术家名称 -->
         <p class="card-name">{{ item.name }}</p>
       </li>
     </ul>
   </div>
 </template>
+
 <style lang="scss" scoped>
 .play-list {
   width: 80%;
@@ -50,7 +49,7 @@ const goAblum = (item) => {
   .play-title {
     height: 60px;
     line-height: 60px;
-    font-size: 28px;
+    font-size: 2rem;
     font-weight: 500;
     text-align: center;
 
@@ -70,55 +69,77 @@ const goAblum = (item) => {
       margin-bottom: 1rem;
       .card {
         position: relative;
-        height: 0;
-        padding-bottom: 100%;
-        border-radius: 5px;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+        align-items: center;
+        aspect-ratio: 1/1; // 设置宽高比为1:1,即正方形
+        width: 70%;
+        border-radius: 10px;
         overflow: hidden;
         margin-right: 2rem;
-      }
 
-      &:hover .card-img {
-        transform: scale(1.2);
+        .card-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          border-radius: 10px;
+          &:hover {
+            transform: scale(1.2);
+          }
+        }
       }
     }
   }
-}
 
-.mask {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 5px;
-  background-color: rgba(52, 47, 41, 0.4);
-  //   @include layout(center, center);
-  transition: all 0.3s ease-in-out;
-  opacity: 0;
+  .mask {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 5px;
+    background-color: rgba(52, 47, 41, 0.4);
+    //   @include layout(center, center);
+    transition: all 0.3s ease-in-out;
+    opacity: 0;
 
-  &:hover {
-    opacity: 1;
-    cursor: pointer;
+    &:hover {
+      opacity: 1;
+      cursor: pointer;
+    }
+  }
+  /* 新增错误状态样式 */
+  .image-error {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+  }
+
+  .card-name {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 1rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
-/* 新增错误状态样式 */
-.image-error {
-  width: 100%;
-  height: 100%;
-  background-size: contain;
+@media (max-width: 480px) {
+  .play-list {
+    width: 100%;
+  }
+  .card-name {
+    font-size: 0.6rem;
+  }
 }
-
-.card-img {
-  /* 确保图片容器有固定宽高比 */
-  width: 200px;
-  height: 200px;
-  border-radius: 8px;
-  object-fit: cover; /* 保持图片比例 */
-}
-
-.card-name {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #333;
+@media (min-width: 481px) and (max-width: 768px) {
+  .play-body {
+    grid-template-columns: repeat(auto-fit, minmax(min(120px, 100%), 1fr));
+  }
+  .play-title {
+    font-size: 1.75rem;
+  }
 }
 </style>

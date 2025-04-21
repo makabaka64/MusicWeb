@@ -36,8 +36,7 @@ const top5Playlists = computed(() => {
 const images = ref([
   { src: '../src/assets/轮播图1.jpg', alt: 'Slide 1' },
   { src: '../src/assets/轮播图2.jpg', alt: 'Slide 2' },
-  { src: '../src/assets/轮播图3.jpg', alt: 'Slide 3' },
-  { src: '../src/assets/轮播图4.jpg', alt: 'Slide 4' }
+  { src: '../src/assets/轮播图3.jpg', alt: 'Slide 3' }
 ])
 // 创建一个响应式的歌单数据
 </script>
@@ -69,13 +68,22 @@ const images = ref([
 </template>
 <style lang="scss" scoped>
 .swiper-container {
-  width: 80%;
-  height: 23rem;
+  width: 90%;
+  max-width: 1200px;
+  aspect-ratio: 16 / 5; // 自动控制高度，兼容性现代浏览器都支持
   margin: auto;
   padding-top: 3rem;
   border-bottom: 1px solid #e4e7ed;
-}
+  // 兼容不支持 aspect-ratio 的情况
+  @supports not (aspect-ratio: 16 / 6) {
+    height: 20rem;
+  }
 
+  @media (max-width: 768px) {
+    aspect-ratio: 16 / 9;
+    padding-top: 6rem;
+  }
+}
 .carousel-img {
   width: 100%;
   height: 100%;

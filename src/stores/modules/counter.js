@@ -51,6 +51,7 @@ export const usePlaylistStore = defineStore(
         const data = await getPlaylistData({ ids: batchIds })
         if (!data?.albums) throw new Error('Invalid playlist data')
         allPlayList.value = [...allPlayList.value, ...data.albums]
+
         page.value++
         hasMore.value = end < albumIds.length
       } catch (error) {

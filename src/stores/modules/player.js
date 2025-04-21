@@ -16,6 +16,7 @@ export const usePlayerStore = defineStore('player', {
     startTime: '00:00', //
     endTime: '00:00',
     songId: null,
+    songImages: '',
     previewUrl: '',
     nowTime: 0, //
     playState: 0, //

@@ -29,7 +29,7 @@ const fetchUserInfo = async () => {
 
 const userInfo = computed(() => userStore.user || {})
 const personalInfo = computed(() => ({
-  nickname: userInfo.value.nickname ?? '未命名用户',
+  nickname: userInfo.value.nickname,
   email: userInfo.value.email ?? '未绑定邮箱',
   user_pic: userInfo.value.user_pic ?? avatar
 }))
@@ -170,16 +170,12 @@ const logout = () => {
     margin-top: -150px;
   }
 }
-
-// @media screen and (min-width: 768px) {
-//   .personal-body {
-//     padding: 0px 150px;
-//   }
-// }
-
-// @media screen and (max-width: 1024px) {
-//   .edit-info {
-//     display: none;
-//   }
-// }
+@media screen and (max-width: 1024px) {
+  .personal-msg {
+    display: none;
+  }
+  .personal-img {
+    display: none;
+  }
+}
 </style>

@@ -48,12 +48,21 @@ const formModel = ref({
 const userStore = useUserStore()
 const router = useRouter()
 const register = async () => {
-  await form.value.validate()
-  await userRegisterService(formModel.value)
-  ElMessage.success('注册成功')
-  // 切换到登录
-  isRegister.value = false
+  try {
+    await form.value.validate()
+    const res = await userRegisterService(formModel.value)
+    // 检查 status 是否为 0
+    if (res.data.status === 0) {
+      ElMessage.success(res.data.message || '注册成功')
+      isRegister.value = false // 切换到登录
+    } else {
+      ElMessage.error(res.data.message || '注册失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '注册失败')
+  }
 }
+
 const login = async () => {
   try {
     await form.value.validate()
@@ -81,7 +90,7 @@ watch(isRegister, () => {
 </script>
 <template>
   <el-row class="login-page">
-    <el-col :span="12" class="bg">
+    <el-col :span="12" :xs="0" class="bg">
       <div class="title"><h1>Welcome!</h1></div>
       <div class="page">
         <h3>🎵 加入我们，开启您的音乐之旅 🎵</h3>
@@ -92,7 +101,7 @@ watch(isRegister, () => {
         </ul>
       </div>
     </el-col>
-    <el-col :span="6" :offset="3" class="form">
+    <el-col :span="6" :offset="3" :xs="24" class="form">
       <el-form
         :rules="rules"
         ref="form"
@@ -191,24 +200,50 @@ watch(isRegister, () => {
 <style lang="scss" scoped>
 .login-page {
   width: 80%;
-  height: 600px;
-  margin: auto;
-  // background-image: url('../assets/login.jpg');
+  margin-top: 100px;
   .bg {
     color: #0f0e0e;
     margin: auto;
     padding: 0px 0px 0px 180px;
     .title {
-      // padding: 0px 0px 0px 80px;
       white-space: nowrap;
     }
     .page {
-      // padding: 3px 0px 0px 170px;
       white-space: nowrap;
     }
-    // .page2 {
-    //   // padding: 0px 0px 0px 170px;
-    // }
+  }
+  @media screen and (max-width: 768px) {
+    width: 100%;
+    // height: auto;
+    // min-height: 100vh;
+    padding: 20px;
+
+    .form {
+      padding: 0;
+      margin: 0;
+
+      .el-form {
+        width: 100%;
+        padding: 0 15px;
+
+        h1 {
+          font-size: 24px !important;
+        }
+
+        .el-form-item {
+          margin-bottom: 18px;
+        }
+
+        .el-input {
+          font-size: 14px;
+        }
+
+        .el-button {
+          font-size: 14px;
+          padding: 12px 0;
+        }
+      }
+    }
   }
 }
 
@@ -231,5 +266,10 @@ watch(isRegister, () => {
     display: flex;
     justify-content: space-between;
   }
+}
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 </style>
