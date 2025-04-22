@@ -290,6 +290,36 @@ onBeforeUnmount(() => {
   }
 }
 @media screen and (max-width: 768px) {
+  .form-item-btns {
+    display: flex !important;
+    gap: 10px;
+
+    .el-button {
+      flex: 1;
+      margin-left: 0 !important;
+    }
+  }
+
+  /* 头像按钮特殊处理 */
+  .avatar-btns {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+
+    .el-button {
+      flex: 1;
+      white-space: nowrap;
+    }
+  }
+
+  /* 调整Element UI默认样式 */
+  :deep(.el-form-item__content) {
+    justify-content: space-between;
+  }
+
+  .el-button + .el-button {
+    margin-left: 0 !important;
+  }
   .el-col {
     flex: 0 0 100% !important;
     max-width: 100% !important;
@@ -305,7 +335,7 @@ onBeforeUnmount(() => {
   }
 
   .el-button {
-    width: 50%;
+    width: 45%;
     margin-bottom: 10px;
   }
 

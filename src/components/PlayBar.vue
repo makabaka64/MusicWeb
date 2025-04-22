@@ -221,7 +221,7 @@ onBeforeUnmount(() => {
     <div class="fold" @click="changeAside"></div>
     <!-- 播放进度 -->
     <el-slider
-      class="progress"
+      class="progress progress-bar"
       v-model="nowTime"
       @change="changeTime"
       size="small"
@@ -241,7 +241,7 @@ onBeforeUnmount(() => {
       <div class="song-ctr">
         <!-- 上一首 -->
         <yin-icon
-          class="yin-play-show"
+          class="yin-play-show3"
           :icon="iconList.SHANGYISHOU"
           @click="prev"
         ></yin-icon>
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
       <div class="song-ctr song-edit">
         <!-- 收藏 -->
         <yin-icon
-          class="yin-play-show1"
+          class="yin-play-show2"
           :class="{ active: isCollection }"
           :icon="isCollection ? iconList.like : iconList.dislike"
           @click="changeCollection"
@@ -284,7 +284,9 @@ onBeforeUnmount(() => {
               @click="playerStore.playTrackAtIndex(index)"
             >
               {{ track.name }} ---
-              {{ track.artists.map((a) => a.name).join(', ') }}
+              {{
+                track.artists?.map((a) => a.name)?.join(', ') || '未知艺术家'
+              }}
             </li>
           </ul>
         </div>
@@ -312,6 +314,7 @@ onBeforeUnmount(() => {
   .progress {
     position: absolute;
     margin-top: -20px;
+    width: 97%;
   }
 
   .control-box {
@@ -373,7 +376,7 @@ onBeforeUnmount(() => {
 }
 .sidebar {
   position: absolute;
-  top: -120px;
+  top: -150px;
   right: -20px;
   width: 370px;
   background: #fff;
@@ -381,7 +384,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   padding: 15px;
-  height: 70px;
+  height: 100px;
   /* max-height: 100%; */
   overflow-y: auto;
   .play-title {
@@ -407,7 +410,7 @@ onBeforeUnmount(() => {
   .info-box {
     width: 30%;
     min-width: 200px;
-    margin-left: 30px;
+    // margin-left: 30px;
   }
   .song-ctr,
   .info-box,
@@ -421,13 +424,36 @@ onBeforeUnmount(() => {
   .info-box {
     display: flex;
     flex-direction: row;
-    width: 70%;
-    margin-left: 10px;
+
+    width: 50%;
+    // margin-left: 10px;
+  }
+  .play-bar .progress {
+    position: absolute;
+    margin-top: -20px;
+    width: 90%;
   }
 
+  .song-ctr,
+  .info-box,
+  .song-edit {
+    display: flex;
+    align-items: center;
+  }
+  .song-info,
+  .time-info {
+    width: 30%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .yin-play-show2 {
+    margin-right: 1rem;
+  }
   .yin-play-show {
     display: none;
   }
+
   .sidebar {
     display: none;
   }

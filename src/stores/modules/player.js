@@ -28,7 +28,8 @@ export const usePlayerStore = defineStore('player', {
     // 更新播放器状态（例如在点击歌曲时调用）
     updatePlayer(track) {
       this.songTitle = track.name
-      this.singerName = track.artists.map((a) => a.name).join(', ')
+      this.singerName =
+        track.artists.map((a) => a.name).join(', ') || '未知艺术家'
       this.introduction = track.album.name
       this.endTime = formatTime(track.duration_ms)
       this.songId = track.id
