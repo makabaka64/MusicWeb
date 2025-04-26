@@ -1,8 +1,9 @@
 <script setup>
-import { computed, watch, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, watch, ref, onMounted } from 'vue'
 import { usePlayerStore } from '@/stores'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import {
   userAddFavoriteService,
   userDeleteFavoriteService,
@@ -45,36 +46,23 @@ const iconList = {
   dislike: 'mdi:heart-outline',
   LIEBIAO: 'mdi:playlist-music'
 }
-// 侧边栏显示控制
-const showSidebar = ref(false)
-const toggleIcon = ref(null) // 触发按钮的引用
-const sidebar = ref(null) // 侧边栏的引用
-const toggleSidebar = () => {
-  showSidebar.value = !showSidebar.value
-}
-// 处理全局点击事件
-const handleDocumentClick = (event) => {
-  // 获取DOM元素引用
-  const iconEl = toggleIcon.value?.$el // 获取组件根元素
-  const sidebarEl = sidebar.value
 
-  // 判断点击位置
-  const isClickInside = sidebarEl?.contains(event.target)
-  const isClickOnIcon = iconEl?.contains(event.target)
-
-  // 如果点击外部区域则关闭侧边栏
-  if (!isClickInside && !isClickOnIcon) {
-    showSidebar.value = false
-  }
+const showPlaylistDialog = ref(false)
+// const dialogPosition = ref({ x: 0, y: 0 })
+const togglePlaylistDialog = () => {
+  showPlaylistDialog.value = true
+  // const iconRect = event.target.getBoundingClientRect()
+  // dialogPosition.value = {
+  //   x: iconRect.left - 320, // 弹窗宽度向左偏移
+  //   y: iconRect.top - 50 // 向上偏移
+  // }
+  // showPlaylistDialog.value = true
 }
-// 监听侧边栏状态变化
-watch(showSidebar, (newVal) => {
-  if (newVal) {
-    document.addEventListener('click', handleDocumentClick)
-  } else {
-    document.removeEventListener('click', handleDocumentClick)
-  }
-})
+const selectTrackAtIndex = (index) => {
+  playerStore.playTrackAtIndex(index)
+  showPlaylistDialog.value = false
+}
+
 const playStateList = ['mdi:play', 'mdi:pause']
 // 获取用户信息
 const fetchUserInfo = async () => {
@@ -202,17 +190,25 @@ const next = () => {
 const goPlayerPage = () => {
   router.push({ path: `/lyric/${songId.value}` })
 }
-
+// 删除播放列表音乐
+const handleDeleteTrack = (index) => {
+  ElMessageBox.confirm('确定要删除该歌曲吗？', '删除确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(() => {
+      playerStore.removeTrack(index)
+      ElMessage.success('删除成功')
+    })
+    .catch(() => {})
+}
 // 组件挂载时，先获取用户信息，再获取收藏列表
 onMounted(async () => {
   await fetchUserInfo()
   if (user_id.value) {
     await fetchUserFavorites()
   }
-})
-// 组件卸载时清理事件监听
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
@@ -269,27 +265,56 @@ onBeforeUnmount(() => {
         <!-- 歌单列表/侧边栏 -->
         <yin-icon
           class="yin-play-show"
-          ref="toggleIcon"
           :icon="iconList.LIEBIAO"
-          @click="toggleSidebar"
+          @click="togglePlaylistDialog"
         ></yin-icon>
         <!-- 侧边栏，v-if 控制显示  -->
-        <div v-if="showSidebar" class="sidebar" ref="sidebar">
-          <div class="play-title">播放列表</div>
-          <ul>
-            <li
-              v-for="(track, index) in playerStore.playlist"
-              :key="track.id"
-              :class="{ active: index === playerStore.currentIndex }"
-              @click="playerStore.playTrackAtIndex(index)"
+
+        <teleport to="body">
+          <transition name="slide-up">
+            <div
+              v-show="showPlaylistDialog"
+              class="custom-playlist-dialog"
+              @click.self="showPlaylistDialog = false"
             >
-              {{ track.name }} ---
-              {{
-                track.artists?.map((a) => a.name)?.join(', ') || '未知艺术家'
-              }}
-            </li>
-          </ul>
-        </div>
+              <div class="playlist-wrapper">
+                <div class="playlist-header">
+                  <h3>播放列表 ({{ playerStore.playlist.length }})</h3>
+                  <yin-icon
+                    icon="mdi:close"
+                    class="close-icon"
+                    @click="showPlaylistDialog = false"
+                  ></yin-icon>
+                </div>
+                <div class="playlist-content">
+                  <div
+                    v-for="(track, index) in playerStore.playlist"
+                    :key="track.id"
+                    class="track-item"
+                    :class="{ active: index === playerStore.currentIndex }"
+                    @click="selectTrackAtIndex(index)"
+                  >
+                    <span class="index">{{ index + 1 }}.</span>
+                    <div class="track-info">
+                      <div class="track-name">{{ track.name }}</div>
+                      <div class="track-artist">
+                        {{
+                          track.artists?.map((a) => a.name).join(', ') ||
+                          '未知艺术家'
+                        }}
+                      </div>
+                    </div>
+                    <yin-icon
+                      icon="mdi:trash-can-outline"
+                      class="delete-btn"
+                      @click.stop="handleDeleteTrack(index)"
+                    ></yin-icon>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </teleport>
       </div>
     </div>
   </div>
@@ -374,35 +399,142 @@ onBeforeUnmount(() => {
 .active.icon {
   color: red;
 }
-.sidebar {
-  position: absolute;
-  top: -150px;
-  right: -20px;
-  width: 370px;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* 弹窗容器 */
+.custom-playlist-dialog {
+  position: fixed;
+  right: 0;
+  bottom: 60px; /* 与播放栏高度一致 */
+  z-index: 2000;
+  width: 100%;
+  max-width: 400px;
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  height: 100px;
-  /* max-height: 100%; */
-  overflow-y: auto;
-  .play-title {
-    text-align: center;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #f0f0f0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+
+  .playlist-wrapper {
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+
+    .playlist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #eee;
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+      }
+
+      .close-icon {
+        cursor: pointer;
+        font-size: 20px;
+        color: #666;
+        transition: color 0.2s;
+
+        &:hover {
+          color: #333;
+        }
+      }
+    }
+
+    .playlist-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+
+      .track-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background: #f8f9fa;
+        }
+
+        &.active {
+          color: #409eff;
+          .track-name {
+            font-weight: 500;
+          }
+        }
+
+        .index {
+          width: 32px;
+          color: #999;
+          font-size: 14px;
+        }
+
+        .track-info {
+          flex: 1;
+          overflow: hidden;
+
+          .track-name {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .track-artist {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
   }
-  ul {
-    list-style: none;
-    padding: 0;
-  }
-  li {
-    padding-bottom: 10px;
-    border-bottom: 2px solid #f0f0f0;
+}
+.track-item {
+  position: relative; // 为删除按钮定位提供基准
+  padding-right: 40px; // 为删除按钮留出空间
+
+  .delete-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 16px;
+    padding: 8px;
+    transition: all 0.2s;
+    opacity: 0; // 默认隐藏
     cursor: pointer;
+
+    &:hover {
+      color: #ff4d4f;
+      transform: translateY(-50%) scale(1.1);
+    }
   }
-  li.active {
-    background: #f0f0f0;
+
+  &:hover .delete-btn {
+    opacity: 1; // 悬停时显示
   }
 }
 

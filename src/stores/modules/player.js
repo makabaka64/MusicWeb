@@ -79,7 +79,38 @@ export const usePlayerStore = defineStore('player', {
         newIndex = this.playlist.length - 1 // 循环播放
       }
       this.playTrackAtIndex(newIndex)
+    },
+    removeTrack(index) {
+      if (index >= 0 && index < this.playlist.length) {
+        // 处理当前播放索引
+        if (this.currentIndex === index) {
+          this.currentIndex = -1
+          this.resetPlayer()
+        } else if (this.currentIndex > index) {
+          this.currentIndex--
+        }
+
+        // 删除指定索引的曲目
+        this.playlist.splice(index, 1)
+
+        // 如果列表为空则重置播放器
+        if (this.playlist.length === 0) {
+          this.resetPlayer()
+        }
+      }
+    },
+    resetPlayer() {
+      this.songTitle = '歌曲名称'
+      this.singerName = '歌手名'
+      this.introduction = '专辑名'
+      this.endTime = '00:00'
+      this.songId = null
+      this.previewUrl = ''
+      this.nowTime = 0
+      this.playState = 0
     }
   },
+  // 删除指定索引的曲目
+
   persist: true
 })
