@@ -2,10 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePlaylistStore } from '@/stores'
-// import { getPlaylistCommentsService } from '@/api/user'
 import SongList from '@/components/SongList.vue'
 import Comment from '@/components/CommentList.vue'
-// import { Loading } from '@element-plus/icons-vue/dist/types'
 
 const route = useRoute()
 const playlistStore = usePlaylistStore()
@@ -21,8 +19,6 @@ onMounted(async () => {
   } finally {
     Loading.value = false
   }
-
-  // await getPlaylistCommentsService(albumId)
 })
 </script>
 <template>
@@ -87,22 +83,6 @@ onMounted(async () => {
   p {
     color: rgba(0, 0, 0, 0.5);
     margin: 10px 0 20px 0px;
-  }
-  /*歌单打分*/
-  .album-score {
-    display: flex;
-    align-items: center;
-    margin: 1vw;
-
-    h3 {
-      margin: 10px 0;
-    }
-    span {
-      font-size: 60px;
-    }
-    & > div:last-child {
-      margin-left: 10%;
-    }
   }
 
   .album-body {

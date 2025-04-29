@@ -144,7 +144,6 @@ const handleLike = throttle(async (commentId) => {
   }
 }, 1000)
 
-// 初始化加载
 onMounted(fetchComments)
 watch(() => props.playId, fetchComments)
 </script>

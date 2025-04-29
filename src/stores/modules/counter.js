@@ -1,14 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getPlaylistData, getPlaylistTracks } from '@/api/user'
+import { getPlaylistData, getPlaylistTracks } from '@/api/music'
 
-// 用户模块  music-web 唯一标识，用来作区分
 export const usePlaylistStore = defineStore(
   'music-album',
   () => {
-    const allPlayList = ref([]) // 存储歌单列表
-    const currentPlaylist = ref(null) // 存储当前歌单详情
-    const currentSongList = ref([]) // 存储当前歌单的歌曲
+    const allPlayList = ref([]) // 歌单列表
+    const currentPlaylist = ref(null) // 当前歌单详情
+    const currentSongList = ref([]) // 当前歌单的歌曲
     const albumIds = [
       '382ObEPsp2rxGrnsizN5TX',
       '1A2GTWGtFfWp7KSQTwWOyo',
@@ -87,7 +86,7 @@ export const usePlaylistStore = defineStore(
         const albumName = currentPlaylist.value?.introduction || ''
         currentSongList.value = PlaylistTracksData.items.map((track) => ({
           id: track.id,
-          songName: track.name, // 歌曲名称
+          songName: track.name,
           singerName: track.artists.map((artist) => artist.name).join(', '), // 拼接所有艺术家的名字
           introduction: albumName, // 使用歌单中的专辑名称
           duration: `${Math.floor(track.duration_ms / 60000)}:${String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}`
@@ -110,6 +109,6 @@ export const usePlaylistStore = defineStore(
     }
   },
   {
-    persist: true // 持久化
+    persist: true
   }
 )

@@ -1,12 +1,10 @@
 <script setup>
 import { onMounted, computed } from 'vue'
-import { useUserStore } from '@/stores'
-import { useRecommendStore } from '@/stores'
+import { useUserStore, useRecommendStore } from '@/stores'
 import { useRouter } from 'vue-router'
 import SongGrid from '@/components/SongGrid.vue'
 
 const router = useRouter()
-// const userStore = useUserStore()
 const recommendStore = useRecommendStore()
 const { user } = useUserStore()
 const gocomment = () => {
@@ -20,12 +18,9 @@ const loading = computed(() => recommendStore.loading)
 </script>
 <template>
   <div class="recommend-page">
-    <!-- 加载状态 -->
     <div v-if="loading" class="loading">
       <el-skeleton :rows="6" animated />
     </div>
-
-    <!-- 无收藏提示 -->
     <div v-else-if="!recommendStore.hasCollections" class="empty-tip">
       <h2>🎵 发现你的音乐品味</h2>
       <p>收藏至少3首歌曲，系统将为你生成个性化推荐</p>
@@ -33,8 +28,6 @@ const loading = computed(() => recommendStore.loading)
         <h3>热门推荐</h3>
       </div>
     </div>
-
-    <!-- 推荐内容 -->
     <div v-else>
       <section class="recommend-section">
         <h3>🔥 热门歌曲推荐</h3>

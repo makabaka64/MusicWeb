@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getArtistData, getTopTracks } from '@/api/user'
+import { getArtistData, getTopTracks } from '@/api/music'
 
 export const useArtistStore = defineStore(
   'artist',
   () => {
-    const allPlayList = ref([]) // 存储歌手列表
-    const songDetails = ref(null) // 存储歌手的详细信息
-    const currentSongList = ref([]) // 存储当前歌手的歌曲列表
+    const allPlayList = ref([]) // 歌手列表
+    const songDetails = ref(null) // 歌手的详细信息
+    const currentSongList = ref([]) // 当前歌手的歌曲列表
     const artistIds = [
       '2CIMQHirSU0MQqyYHq0eOx',
       '57dN52uHvrHOxijzpIgu3E',
@@ -83,7 +83,6 @@ export const useArtistStore = defineStore(
         )
       } catch (error) {
         console.error('Error fetching artists:', error)
-        // allPlayList.value = [] // 清空数据避免渲染错误
       } finally {
         isLoading.value = false
       }
@@ -95,10 +94,10 @@ export const useArtistStore = defineStore(
         const artist = artistData.artists[0]
         songDetails.value = {
           name: artist.name,
-          pic: artist.images?.[0]?.url || '', // 歌手图片
-          followers: artist.followers?.total || 0, // 粉丝数
-          popularity: artist.popularity, // 人气值
-          introduction: `流派：${artist.genres.join(', ')}` // 歌手介绍
+          pic: artist.images?.[0]?.url || '',
+          followers: artist.followers?.total || 0,
+          popularity: artist.popularity,
+          introduction: `流派：${artist.genres.join(', ')}`
         }
       } catch (error) {
         console.error('获取歌手信息失败：', error)
@@ -112,10 +111,10 @@ export const useArtistStore = defineStore(
         const topTracksData = await getTopTracks({ id: artistId })
         currentSongList.value = topTracksData.tracks.map((track) => ({
           id: track.id,
-          songName: track.name, // 歌曲名称
-          singerName: track.artists.map((artist) => artist.name).join(', '), // 歌手名称
-          introduction: track.album.name, // 专辑名称
-          duration: `${Math.floor(track.duration_ms / 60000)}:${String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}` // 歌曲时长
+          songName: track.name,
+          singerName: track.artists.map((artist) => artist.name).join(', '),
+          introduction: track.album.name,
+          duration: `${Math.floor(track.duration_ms / 60000)}:${String(Math.floor((track.duration_ms % 60000) / 1000)).padStart(2, '0')}` //歌曲时长
         }))
       } catch (error) {
         console.error('获取热门曲目失败：', error)
@@ -135,6 +134,6 @@ export const useArtistStore = defineStore(
     }
   },
   {
-    persist: true // 持久化
+    persist: true
   }
 )

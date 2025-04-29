@@ -10,7 +10,7 @@ import { userGetFavoriteListService, userGetInfoService } from '@/api/user'
 const userStore = useUserStore()
 const router = useRouter()
 const loading = ref(true)
-// 判断登录状态：当 token 存在则认为用户已登录
+// 判断登录状态
 const isLoggedIn = computed(() => !!userStore.token)
 
 // 获取用户信息
@@ -34,9 +34,7 @@ const personalInfo = computed(() => ({
   user_pic: userInfo.value.user_pic ?? avatar
 }))
 // 当前用户 id
-// const user_id = ref(id)
 const user_id = computed(() => userInfo.value.id || null)
-// 用来保存用户收藏的歌曲 id 列表
 const collectSongList = ref([])
 onMounted(async () => {
   // 未登录时不进行数据初始化
@@ -75,7 +73,6 @@ const fetchUserFavorites = async () => {
 const goPage = () => {
   router.push('/setting')
 }
-// 跳转到登录页面
 const goLogin = () => {
   router.push('/login')
 }
@@ -88,12 +85,10 @@ const logout = () => {
 <template>
   <div v-if="loading" class="loading-text">加载用户信息中...</div>
   <div v-else class="personal">
-    <!-- 未登录时显示提示信息 -->
     <div v-if="!userStore.token" class="not-logged-in">
       <p>请先登录或注册</p>
       <el-button type="primary" @click="goLogin">点击登录</el-button>
     </div>
-    <!-- 已登录时显示完整的个人信息 -->
     <div v-else class="personal-content">
       <div class="personal-info">
         <div class="personal-img">

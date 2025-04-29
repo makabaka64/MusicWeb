@@ -29,6 +29,7 @@ const SignUpRules = {
 const goBack = (step) => {
   window.history.go(step)
 }
+// 修改资料
 const submitForm = async () => {
   try {
     await formRef.value.validate()
@@ -81,11 +82,9 @@ const onSubmit = async () => {
     try {
       const res = await userUpdatePassService(form.value)
       if (res.data.status !== 0) {
-        // 手动抛出错误，让 catch 分支处理
         throw new Error(res.data.message)
       }
       ElMessage.success('密码已修改')
-      // 清空本地存储的 token 和 user
       userStore.setToken('')
       userStore.setUser({})
       router.push('/login')

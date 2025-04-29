@@ -25,22 +25,16 @@ const fetchSearchResults = async (query) => {
     console.error('Error fetching search results:', error)
   }
 }
-// 点击行时调用：根据歌曲名称与歌手名称构造查询，并获取预览音频 URL 播放
 const handleClick = async (row) => {
   try {
-    // 调用 getTrackDetail 方法获取单曲详情数据
     const track = await getTrackDetail({ id: row.id })
     console.log('歌曲详情:', track)
 
     if (!track.preview_url) {
       ElMessage.warning('该歌曲没有可用的预览片段')
-      // return
     }
     // 更新全局播放器状态
     playerStore.updatePlayer(track)
-
-    // 此处你可以调用一个播放方法，由全局 audio 播放器进行播放
-    // 例如通过调用一个全局播放函数：playPreview(track.preview_url)
   } catch (error) {
     ElMessage.error(error.message || '播放失败')
   }
@@ -57,13 +51,11 @@ watch(
     if (newQuery) fetchSearchResults(newQuery)
   }
 )
-// 跳转至专辑详情页
 const goToAlbumDetail = (id) => {
-  router.push({ path: `/song-detail/${id}` }) // 确保路由存在
+  router.push({ path: `/song-detail/${id}` })
 }
-// 跳转至歌手详情页
 const goToArtistDetail = (id) => {
-  router.push({ path: `/singer-detail/${id}` }) // 确保路由存在
+  router.push({ path: `/singer-detail/${id}` })
 }
 </script>
 <template>

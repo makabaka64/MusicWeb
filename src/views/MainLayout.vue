@@ -10,7 +10,6 @@ const keywords = ref('')
 onMounted(() => {
   userStore.getUser()
 })
-// 安全访问用户信息
 const userAvatar = computed(() => {
   return userStore.user?.user_pic || avatar
 })
@@ -152,7 +151,6 @@ const menuList = [
   }
 }
 
-// 移动端适配
 @media (max-width: 768px) {
   .navbar {
     width: 100%;

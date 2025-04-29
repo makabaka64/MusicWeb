@@ -24,7 +24,6 @@ const handleClick = (row) => {
         <div class="info" @click="handleClick(track)">
           <h4 class="title">{{ track.name }}</h4>
           <p class="artist">{{ track.artists?.[0]?.name }}</p>
-          <!-- <audio controls :src="track.preview_url" class="preview" /> -->
         </div>
       </el-card>
     </div>

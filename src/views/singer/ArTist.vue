@@ -46,7 +46,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="play-list-container">
-    <!-- 渲染歌手列表 -->
     <play-list
       class="play-liat"
       :playList="playlistStore.allPlayList"

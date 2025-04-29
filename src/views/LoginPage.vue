@@ -39,7 +39,6 @@ const rules = {
     }
   ]
 }
-// 整个的用于提交的form数据对象
 const formModel = ref({
   username: '',
   password: '',
@@ -51,7 +50,6 @@ const register = async () => {
   try {
     await form.value.validate()
     const res = await userRegisterService(formModel.value)
-    // 检查 status 是否为 0
     if (res.data.status === 0) {
       ElMessage.success(res.data.message || '注册成功')
       isRegister.value = false // 切换到登录

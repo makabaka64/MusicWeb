@@ -13,7 +13,6 @@ import {
 const playerStore = usePlayerStore()
 const router = useRouter()
 
-// 计算属性直接绑定 store 中的状态
 const introduction = computed(() => playerStore.introduction)
 const songTitle = computed(() => playerStore.songTitle)
 const singerName = computed(() => playerStore.singerName)
@@ -36,7 +35,7 @@ const audioPlayer = ref(new Audio())
 // 本地用户信息及收藏列表
 const user_id = ref(null)
 const favoriteList = ref([])
-// 图标列表，根据实际需求设置
+// 图标列表
 const iconList = {
   SHANGYISHOU: 'mdi:skip-previous',
   XIAYISHOU: 'mdi:skip-next',
@@ -48,15 +47,8 @@ const iconList = {
 }
 
 const showPlaylistDialog = ref(false)
-// const dialogPosition = ref({ x: 0, y: 0 })
 const togglePlaylistDialog = () => {
   showPlaylistDialog.value = true
-  // const iconRect = event.target.getBoundingClientRect()
-  // dialogPosition.value = {
-  //   x: iconRect.left - 320, // 弹窗宽度向左偏移
-  //   y: iconRect.top - 50 // 向上偏移
-  // }
-  // showPlaylistDialog.value = true
 }
 const selectTrackAtIndex = (index) => {
   playerStore.playTrackAtIndex(index)
@@ -121,7 +113,7 @@ const changePlayState = async () => {
     ElMessage.error(error.message || '播放失败')
   }
 }
-// 更新播放进度（滑块拖动时触发）
+// 更新播放进度
 const changeTime = (newTime) => {
   playerStore.updateNowTime(newTime)
   if (audioPlayer.value) {
@@ -129,7 +121,7 @@ const changeTime = (newTime) => {
   }
 }
 
-// 收藏操作：点击收藏图标时触发
+// 收藏
 const changeCollection = async () => {
   try {
     if (!user_id.value) {
@@ -141,7 +133,6 @@ const changeCollection = async () => {
       ElMessage.warning('没有选中的歌曲')
       return
     }
-    // 如果当前歌曲未收藏则添加收藏，否则取消收藏
     if (!favoriteList.value.includes(currentSongId)) {
       console.log('收藏歌曲:', currentSongId)
 
@@ -203,7 +194,7 @@ const handleDeleteTrack = (index) => {
     })
     .catch(() => {})
 }
-// 组件挂载时，先获取用户信息，再获取收藏列表
+
 onMounted(async () => {
   await fetchUserInfo()
   if (user_id.value) {
@@ -268,7 +259,6 @@ onMounted(async () => {
           :icon="iconList.LIEBIAO"
           @click="togglePlaylistDialog"
         ></yin-icon>
-        <!-- 侧边栏，v-if 控制显示  -->
 
         <teleport to="body">
           <transition name="slide-up">

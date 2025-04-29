@@ -7,11 +7,10 @@ import {
   userAddFavoriteService,
   userDeleteFavoriteService,
   userGetInfoService,
-  userGetFavoriteListService,
-  getTrackDetail
+  userGetFavoriteListService
 } from '@/api/user'
+import { getTrackDetail } from '@/api/music'
 const playerStore = usePlayerStore()
-// 使用 defineProps 定义 songList 属性，父组件传递的歌曲列表数据将通过这个 prop 获取
 const props = defineProps({
   songList: {
     type: Array,
@@ -22,16 +21,14 @@ const props = defineProps({
 const processedSongList = ref([])
 // 当前用户 id
 const user_id = ref(null)
-// 用来保存用户收藏的歌曲 id 列表
+// 收藏的歌曲 id 列表
 const favoriteList = ref([])
 
 // 播放器相关
 // const audioPlayer = ref(null)
 
-// 点击行时调用：根据歌曲名称与歌手名称构造查询，并获取预览音频 URL 播放
 const handleClick = async (row) => {
   try {
-    // 调用 getTrackDetail 方法获取单曲详情数据
     const track = await getTrackDetail({ id: row.id })
     console.log('歌曲详情:', track)
 
@@ -77,7 +74,6 @@ const fetchUserFavorites = async () => {
   try {
     const res = await userGetFavoriteListService(user_id.value)
     if (res.data.status === 0) {
-      // 假设后端返回的数据中 song_id 为歌曲ID，并且 collected 字段的值都是 0（表示已收藏）
       favoriteList.value = res.data.data.map((item) => item.song_id)
     }
   } catch (error) {
@@ -94,7 +90,6 @@ watch(
         ...item,
         collected: favoriteList.value.includes(item.id) ? 0 : 1
       }))
-      // console.log('歌曲列表更新:', processedSongList.value)
     }
   },
   { immediate: true, deep: true }
@@ -126,11 +121,10 @@ const Collection = async (row) => {
     if (!isCollected) {
       const params = {
         user_id: user_id.value,
-        song_id: row.id, // 歌曲ID存储在 row.id 中
+        song_id: row.id,
         songName: row.songName,
         singerName: row.singerName,
         introduction: row.introduction
-        // collected: 0 // 明确传递状态
       }
       const res = await userAddFavoriteService(params)
       // console.log('收藏列表更新:', favoriteList.value)

@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import {
   getCollaborativeRec,
-  getTrackDetail,
   getHotRec,
   userGetFavoriteListService
 } from '@/api/user'
+import { getTrackDetail } from '@/api/music'
 
 export const useRecommendStore = defineStore('recommend', () => {
   const collaborativeList = ref([])
@@ -24,7 +24,7 @@ export const useRecommendStore = defineStore('recommend', () => {
       const hotRawList = hotRes?.data?.data
 
       if (!Array.isArray(hotRawList)) {
-        console.warn('🔥 热门推荐返回的不是数组！', hotRawList)
+        console.warn('热门推荐返回的不是数组！', hotRawList)
         return
       }
       const hotListIds = hotRawList.map((item) => item.song_id)
@@ -36,7 +36,7 @@ export const useRecommendStore = defineStore('recommend', () => {
       const collabRes = await getCollaborativeRec(userId)
       const collabRawList = collabRes?.data?.data
       if (!Array.isArray(collabRawList)) {
-        console.warn('❗协同推荐返回的不是数组', collabRawList)
+        console.warn('协同推荐返回的不是数组', collabRawList)
         return
       }
       const playlistIds = collabRawList.map((item) => item.song_id)

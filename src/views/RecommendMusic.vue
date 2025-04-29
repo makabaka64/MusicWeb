@@ -8,7 +8,6 @@ const loading = ref({
   artists: true,
   playlists: true
 })
-// 请求并获取数据
 onMounted(async () => {
   try {
     await Promise.all([
@@ -38,7 +37,6 @@ const images = ref([
   { src: '../src/assets/轮播图2.jpg', alt: 'Slide 2' },
   { src: '../src/assets/轮播图3.jpg', alt: 'Slide 3' }
 ])
-// 创建一个响应式的歌单数据
 </script>
 <template>
   <el-carousel
@@ -70,14 +68,10 @@ const images = ref([
 .swiper-container {
   width: 90%;
   max-width: 1200px;
-  aspect-ratio: 16 / 5; // 自动控制高度，兼容性现代浏览器都支持
+  aspect-ratio: 16 / 5; // 自动控制高度
   margin: auto;
   padding-top: 3rem;
   border-bottom: 1px solid #e4e7ed;
-  // 兼容不支持 aspect-ratio 的情况
-  @supports not (aspect-ratio: 16 / 6) {
-    height: 20rem;
-  }
 
   @media (max-width: 768px) {
     aspect-ratio: 16 / 9;

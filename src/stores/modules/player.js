@@ -13,19 +13,19 @@ export const usePlayerStore = defineStore('player', {
     songTitle: '歌曲名称',
     singerName: '歌手名',
     introduction: '专辑名',
-    startTime: '00:00', //
+    startTime: '00:00',
     endTime: '00:00',
     songId: null,
     songImages: '',
     previewUrl: '',
-    nowTime: 0, //
-    playState: 0, //
+    nowTime: 0,
+    playState: 0,
     isCollection: false, // 是否收藏
     playlist: [], // 保存当前歌单的所有曲目对象
     currentIndex: -1 // 当前播放曲目的索引，-1 表示没有选中
   }),
   actions: {
-    // 更新播放器状态（例如在点击歌曲时调用）
+    // 更新播放器状态（点击歌曲时调用）
     updatePlayer(track) {
       this.songTitle = track.name
       this.singerName =
@@ -51,7 +51,7 @@ export const usePlayerStore = defineStore('player', {
     }, // 设置歌单列表
     setPlaylist(list) {
       this.playlist = list
-      // 默认将当前索引置为 0（或根据需求设置）
+      // 默认将当前索引置为 0
       this.currentIndex = list.length > 0 ? 0 : -1
     },
     // 播放指定索引的歌曲
@@ -110,7 +110,6 @@ export const usePlayerStore = defineStore('player', {
       this.playState = 0
     }
   },
-  // 删除指定索引的曲目
 
   persist: true
 })
