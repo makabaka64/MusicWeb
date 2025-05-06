@@ -72,35 +72,8 @@ export const getTrackDetail = (params) => {
     method: 'GET',
     params
   })
-    .then((raw) => {
-      console.log('【getTrackDetail raw】', raw)
-      const payload = raw.data ?? raw
-      if (!payload.id || !payload.name) {
-        throw new Error('Invalid track data received from server')
-      }
-
-      return {
-        id: payload.id,
-        name: payload.name,
-        artist: payload.artist || '未知艺术家',
-        album: payload.album || '未知专辑',
-        cover: payload.cover || '',
-        preview_url: payload.preview_url || null
-      }
-    })
-    .catch((err) => {
-      console.error('getTrackDetail error', err)
-      throw err
+    .then((response) => response.data)
+    .catch((error) => {
+      throw error
     })
 }
-// export const getTrackDetail = (params) => {
-//   return request({
-//     url: '/track',
-//     method: 'GET',
-//     params
-//   })
-//     .then((response) => response.data)
-//     .catch((error) => {
-//       throw error
-//     })
-// }

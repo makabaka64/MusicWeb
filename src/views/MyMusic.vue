@@ -112,6 +112,10 @@ const logout = () => {
   </div>
 </template>
 <style lang="scss" scoped>
+.loading-text {
+  width: 80%;
+  margin: auto;
+}
 .personal {
   width: 80%;
   margin: auto;

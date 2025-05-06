@@ -11,7 +11,7 @@ defineProps({
 
 const handleClick = (row) => {
   if (!row.preview_url) {
-    ElMessage.warning('该歌曲没有可用的预览片段')
+    ElMessage.warning('该歌曲暂无音频')
   }
   playerStore.updatePlayer(row)
 }
