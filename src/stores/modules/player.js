@@ -34,7 +34,7 @@ export const usePlayerStore = defineStore('player', {
       this.endTime = formatTime(track.duration_ms)
       this.songId = track.id
       this.previewUrl = track.preview_url
-      this.songImages = track.album.images?.[0]?.url
+      this.songImages = track.album.images?.[0]?.url || ''
     },
     // 切换播放状态
     togglePlayState() {

@@ -97,7 +97,7 @@ const changePlayState = async () => {
     // 当处于暂停状态时播放预览音频
     if (playState.value === 0) {
       if (!previewUrl.value) {
-        ElMessage.warning('当前歌曲没有预览地址')
+        ElMessage.warning('当前歌曲暂无音频')
         return
       }
 

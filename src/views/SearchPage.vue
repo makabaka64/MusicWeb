@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getSearchResults, getTrackDetail } from '@/api/user'
+import { getSearchResults, getTrackDetail } from '@/api/music'
 import { usePlayerStore } from '@/stores'
 import { ElMessage } from 'element-plus'
 

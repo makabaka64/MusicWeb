@@ -29,25 +29,44 @@ const favoriteList = ref([])
 
 const handleClick = async (row) => {
   try {
-    const track = await getTrackDetail({ id: row.id })
-    console.log('歌曲详情:', track)
+    const dz = await getTrackDetail({ id: row.id })
 
-    if (!track.preview_url) {
-      ElMessage.warning('该歌曲没有可用的预览片段')
+    if (!dz.preview_url) {
+      ElMessage.warning('该歌曲暂无音频')
       // return
     }
+    // 统一本地 track 对象字段
+    const track = {
+      id: dz.id,
+      name: dz.name,
+      artists: [{ name: dz.artist }], // Store 里 updatePlayer 期待 artists 数组
+      album: {
+        name: dz.album,
+        images: [{ url: dz.cover }]
+      },
+      preview_url: dz.preview_url,
+      duration_ms: 30000 // Deezer 只给 30 秒预览
+    }
     // 如果该歌曲还不在播放列表中，则添加到列表
-    const list = [...playerStore.playlist]
-    const exists = list.some((item) => item.id === track.id)
-    if (!exists) {
-      list.push(track)
-      playerStore.setPlaylist(list)
-      // 更新 currentIndex 为新添加歌曲的索引
-      playerStore.currentIndex = list.length - 1
+    // const list = [...playerStore.playlist]
+    // const exists = list.some((item) => item.id === track.id)
+    // if (!exists) {
+    //   list.push(track)
+    //   playerStore.setPlaylist(list)
+    //   // 更新 currentIndex 为新添加歌曲的索引
+    //   playerStore.currentIndex = list.length - 1
+    // } else {
+    //   // 如果已经存在，则更新 currentIndex 为已有位置
+    //   const index = list.findIndex((item) => item.id === track.id)
+    //   playerStore.currentIndex = index
+    // }
+    // 添加到播放列表或切换当前歌曲
+    const existsIndex = playerStore.playlist.findIndex((t) => t.id === track.id)
+    if (existsIndex === -1) {
+      playerStore.setPlaylist([...playerStore.playlist, track])
+      playerStore.currentIndex = playerStore.playlist.length
     } else {
-      // 如果已经存在，则更新 currentIndex 为已有位置
-      const index = list.findIndex((item) => item.id === track.id)
-      playerStore.currentIndex = index
+      playerStore.currentIndex = existsIndex
     }
     // 更新全局播放器状态
     playerStore.updatePlayer(track)
