@@ -115,6 +115,7 @@ const logout = () => {
 .loading-text {
   width: 80%;
   margin: auto;
+  padding-top: 220px;
 }
 .personal {
   width: 80%;

@@ -41,10 +41,7 @@ const router = createRouter({
           path: '/setting',
           component: () => import('@/views/SettingPage.vue')
         },
-        {
-          path: '/lyric/:id',
-          component: () => import('@/views/LyricPage.vue')
-        },
+
         {
           path: '/search',
           component: () => import('@/views/SearchPage.vue')
