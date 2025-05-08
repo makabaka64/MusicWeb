@@ -24,7 +24,8 @@ const goAblum = (item) => {
             :src="item.images?.[0]?.url || require('@/assets/例.jpg')"
             :alt="item.name"
             :preview-src-list="[item.images?.[0]?.url]"
-            loading="eager"
+            loading="lazy"
+            :lazy="true"
           >
             <template #error>
               <div class="image-error">

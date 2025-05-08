@@ -85,7 +85,7 @@ const submitComment = async () => {
       parent_id: currentReply.value.parentId,
       user_id: user.id,
       nickname: user.nickname,
-      user_pic: user.user_pic
+      user_pic: user.user_pic || 'null'
     })
 
     ElMessage.success(currentReply.value.parentId ? '回复成功' : '评论成功')

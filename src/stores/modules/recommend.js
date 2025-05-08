@@ -45,7 +45,7 @@ export const useRecommendStore = defineStore('recommend', () => {
       )
 
       collaborativeList.value = playlistTracksRes
-      hasCollections.value = favoriteList.length > 3
+      hasCollections.value = favoriteList.length > 2
     } catch (err) {
       console.error('加载推荐失败:', err)
       hotList.value = []
