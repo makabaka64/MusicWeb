@@ -1,18 +1,22 @@
 const express = require('express');
-const axios = require('axios');
-// const ytdlp = require('yt-dlp-exec'); 
+const axios = require('axios'); 
 const app = express();
 const cors = require('cors');
 const joi = require('joi')
 const expressJWT = require('express-jwt');
 const config = require('./config'); 
+const Redis = require('ioredis');
+
+
+const redis = new Redis(); // 默认连接 Redis: 127.0.0.1:6379
+
 const clientId = config.spotify.clientId;
 const clientSecret = config.spotify.clientSecret;
 
 app.use(cors());
 app.use(express.json()); // 解析 JSON 数据
 app.use(express.urlencoded({ extended: false }))
-const db = require('./db/index')
+// const db = require('./db/index')
 
 // 路由之前，封装 res.cc 函数
 app.use((req, res, next) => {
@@ -25,46 +29,51 @@ app.use((req, res, next) => {
     next()
 })
 
-// 打印请求日志
-app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    console.log('请求头:', req.headers);
-    console.log('请求体:', req.body);
-    next();
-});
 
 app.use(expressJWT({ secret: config.jwtSecretKey }).unless({
     path: [
-        /^\/api/,        // 用户登录、注册等接口
-        /^\/artists/,    // 歌手信息接口
-        /^\/top-tracks/, // 歌手热门歌曲
-        /^\/albums/,     // 专辑信息
-        /^\/tracks/,     // 专辑歌曲
+        /^\/api/,        
+        /^\/artists/,    
+        /^\/top-tracks/, 
+        /^\/albums/,     
+        /^\/tracks/,    
         /^\/search/, 
         /^\/track/,    
         
     ] }))
 
 
-const memoryCache = {}
-// 缓存助手
+// Redis 缓存封装函数
 async function getOrSetCache(key, fetchFn, ttl = 3600) {
-    const now = Date.now();
-    const entry = memoryCache[key];
-    if (entry && entry.expireAt > now) {
-        console.log(`Cache hit: ${key}`);
-        return entry.value;
+    
+    const cached = await redis.get(key);
+    if (cached) {
+        console.log(`Redis Cache hit: ${key}`);
+        const parsed = JSON.parse(cached);
+        if (parsed === 'null') return null; // 处理缓存的 null 值
+        return parsed;
     }
-    console.log(`Cache miss: ${key}`);
+    console.log(`Redis Cache miss: ${key}`);
     const fresh = await fetchFn();
-    memoryCache[key] = { value: fresh, expireAt: now + ttl * 1000 };
+    // 防止缓存穿透：如果查不到数据，缓存null
+    if (fresh == null) {
+        await redis.set(key, JSON.stringify(null), 'EX', 60); // 缓存 null 值 60 秒
+        return null;
+    }
+    // 设置抖动范围 ±5 分钟（最多波动 300 秒）
+    const jitter = Math.floor(Math.random() * 300); // 0~299
+    const finalTTL = ttl + jitter;
+    await redis.set(key, JSON.stringify(fresh), 'EX', finalTTL); 
     return fresh;
 }
+
 let cachedToken = null;
 let tokenExpireTime = 0;
+// 获取 Spotify Access Token (带缓存)
 async function getAccessToken() {
     const now = Date.now();
     if (cachedToken && now < tokenExpireTime) return cachedToken;
+
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     console.log('Client ID:', clientId); // 验证 clientId
     console.log('Auth Header:', auth); // 验证生成的 Basic Auth 头
@@ -238,6 +247,8 @@ app.use((err, req, res, next) => {
 app.listen(8080, () => {
     console.log('Server running at http://127.0.0.1:8080');
 });
+
+// 预加载歌手和专辑信息
 (async function preload() {
     try {
         const token = await getAccessToken();
@@ -259,20 +270,16 @@ app.listen(8080, () => {
             '6qqNVTkY8uBg9cP3Jd7DAH',
             '6vWDO969PvNqNYHIOW5v0m',];
         if (preloadArtistIds.length) {
-            // 一次批量拿回 artists[].  然后分别缓存到 memoryCache
+            // 一次批量拿回 artists[].  然后分别缓存到 redis 中
             const resp = await axios.get(
                 `https://api.spotify.com/v1/artists?ids=${preloadArtistIds.join(',')}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            resp.data.artists.forEach(artist => {
-                if (!artist) return;
-                // 直接写入内存缓存
-                const key = `artists:${artist.id}`;
-                memoryCache[key] = {
-                    value: { artists: [artist] },
-                    expireAt: Date.now() + 3600 * 1000
-                };
-            });
+           for (const artist of resp.data.artists) {
+                if (artist) {
+                await redis.set(`artists:${artist.id}`, JSON.stringify({ artists: [artist] }), 'EX', 3600); // 缓存1小时
+                }
+            }
         }
 
         // 同理预加载专辑
@@ -292,14 +299,11 @@ app.listen(8080, () => {
                 `https://api.spotify.com/v1/albums?ids=${preloadAlbumIds.join(',')}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            resp.data.albums.forEach(album => {
-                if (!album) return;
-                const key = `albums:${album.id}`;
-                memoryCache[key] = {
-                    value: { albums: [album] },
-                    expireAt: Date.now() + 3600 * 1000
-                };
-            });
+            for (const album of resp.data.albums) {
+                if (album) {
+                await redis.set(`albums:${album.id}`, JSON.stringify({ albums: [album] }), 'EX', 3600); 
+                }
+            }
         }
 
         console.log('Preload completed successfully');
